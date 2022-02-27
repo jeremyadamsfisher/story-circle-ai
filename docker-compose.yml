@@ -15,10 +15,7 @@ services:
       - "5000"
     env_file:
       - .env
-
-  database:
-    image: postgres
-    env_file:
-      - .env
-    ports:
-      - "5005:5005"
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/creds.json
+    volumes:
+      - "./creds.json:/creds.json"

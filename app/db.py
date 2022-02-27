@@ -1,20 +1,18 @@
-import os
+from google.cloud.sql.connector import connector
+from sqlalchemy import create_engine
+from sqlmodel import Session, create_engine
 
-from sqlmodel import create_engine, SQLModel, Session
-
-
-dsn = "postgresql+pg8000://{}:{}@{}:{}/{}".format(
-    os.environ["PGUSER"],
-    os.environ["PGPASSWORD"],
-    "database" if os.environ["APP_STAGE"] == "dev" else os.environ["PGHOST"],
-    os.environ["PGPORT"],
-    os.environ["PGDATABASE"],
+engine = create_engine(
+    "postgresql+pg8000://",
+    creator=lambda: connector.connect(
+        "story-circle-ai:us-east1:yakul",
+        "pg8000",
+        # user="story-circle-app-sa@story-circle-ai.iam",
+        user="jeremy.adams.fisher@gmail.com",
+        db="faboo",
+        enable_iam_auth=True,
+    ),
 )
-engine = create_engine(dsn, echo=True)
-
-
-def init_db():
-    SQLModel.metadata.create_all(engine)
 
 
 def get_session():
