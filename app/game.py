@@ -34,7 +34,7 @@ def next_segment_prediction(prompt: str) -> str:
     text_gen = text_gen["generated_text"]
     text_gen = "".join(c for c in text_gen if c in string.printable)
     try:
-        (text_gen,) = re.match(r"^(.*\.)", text_gen).groups()
+        (text_gen,) = re.match(r"^(.*?\.)", text_gen).groups()
     except (ValueError, AttributeError):
         raise InferenceProblemNotASentence(f"invalid sentence: {text_gen}")
     text_gen = text_gen[len(prompt_full) :]
@@ -52,7 +52,6 @@ def perform_ai_turn(story_id):
         except crud.DbNotFound:
             raise crud.DbIssue(f"could not find {story_id}")
         prompt = " ".join([s.content for s in story.segments])
-        # prompt = story.segments[-1].content
         for _ in range(N_FAILURES_ALLOWED):
             try:
                 next_segment_content = next_segment_prediction(prompt)

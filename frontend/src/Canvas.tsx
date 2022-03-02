@@ -28,7 +28,7 @@ const Canvas = () => {
 
   const [story, setStory] = useState<Story | undefined>();
   const [currentSegmentContent, setCurrentSegmentContent] =
-    useState<string>("");
+    useState<string>("Write here.");
 
   const submitStorySegment = async () => {
     await fetch(
@@ -75,28 +75,37 @@ const Canvas = () => {
               }
               placement="top"
             >
-              <span key={index}>{segment.content} </span>
+              <Text
+                as="span"
+                key={index}
+                borderRadius="5"
+                background={
+                  segment.author.single_player ? "gray.50" : "green.50"
+                }
+                p={1}
+              >
+                {segment.content}
+              </Text>
             </Tooltip>
           ))}
           {isCurrentUserTurn && (
-            <span
+            <Text
+              as="span"
+              borderRadius="5"
+              shadow={currentSegmentContent === "Write here." ? "outline" : ""}
               contentEditable={true}
               suppressContentEditableWarning={true}
+              color={
+                currentSegmentContent === "Write here." ? "gray.400" : "black"
+              }
               onBlur={(e) => {
                 setCurrentSegmentContent(e.target.innerText);
               }}
             >
               Write here.
-            </span>
+            </Text>
           )}
         </Box>
-        {!isCurrentUserTurn && (
-          <Stack>
-            <Skeleton height="20px" />
-            <Skeleton height="20px" />
-            <Skeleton height="20px" />
-          </Stack>
-        )}
         <HStack p={10}>
           <ButtonGroup size="sm" isAttached variant="solid">
             <Button onClick={submitStorySegment} disabled={!isCurrentUserTurn}>
@@ -119,9 +128,7 @@ const Canvas = () => {
                       will know who is inviting them.
                     </Text>
                     <ButtonGroup d="flex" justifyContent="left">
-                      <Button leftIcon={<FaUserCircle />} colorScheme="teal">
-                        Log in
-                      </Button>
+                      <Button leftIcon={<FaUserCircle />}>Log in</Button>
                     </ButtonGroup>
                   </VStack>
                 </PopoverBody>

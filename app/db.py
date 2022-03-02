@@ -7,8 +7,7 @@ engine = create_engine(
     creator=lambda: connector.connect(
         "story-circle-ai:us-east1:yakul",
         "pg8000",
-        # user="story-circle-app-sa@story-circle-ai.iam",
-        user="jeremy.adams.fisher@gmail.com",
+        user="story-circle-app-sa@story-circle-ai.iam",
         db="faboo",
         enable_iam_auth=True,
     ),
