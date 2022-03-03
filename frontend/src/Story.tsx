@@ -4,13 +4,14 @@ interface Author {
   ai_player: boolean;
 }
 
-interface Segment {
+export interface Segment {
   content: string;
   author: Author;
 }
 
 interface WhoseTurnIsIt {
-  name: string;
+  single_player: boolean;
+  ai_player: boolean;
 }
 
 export interface Story {

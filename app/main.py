@@ -95,11 +95,9 @@ def append_to_story(
     if author != story.whose_turn_is_it:
         raise HTTPException(405, detail="not player turn")
 
-    content = content.strip()
-
     segment = StorySegment(
         author=author,
-        content=content,
+        content=content.rstrip(),
         ai_generated=False,
     )
     story.segments.append(segment)

@@ -1,14 +1,11 @@
 import {
   HStack,
-  Stack,
-  Skeleton,
   Spinner,
   Text,
   VStack,
   Box,
   Button,
   ButtonGroup,
-  Tooltip,
   Popover,
   PopoverTrigger,
   PopoverContent,
@@ -17,103 +14,110 @@ import {
   PopoverCloseButton,
   PopoverHeader,
 } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
-import { FaUserCircle } from "react-icons/fa";
+import axios from "axios";
+import { useQuery, useMutation } from "react-query";
+import { useState } from "react";
 import { useLocation } from "react-router-dom";
-import { Story } from "./Story";
+import { Story, Segment } from "./Story";
+import WriteField from "./components/WriteField";
+import LogInButton from "./components/LogInButton";
+import config from "./config";
+import BeatLoader from "react-spinners/BeatLoader";
+
+type SentenceBreak = {
+  content: string;
+};
+type Sentence = Segment;
+
+const isSentence = (x: any): x is Sentence => {
+  return (x as Sentence) !== undefined;
+};
 
 const Canvas = () => {
+  const useStory = (story_uuid: string) =>
+    useQuery<Story, Error>(
+      story_uuid,
+      async () => {
+        const { data } = await axios.get(
+          `${config.baseUrl}/story/${story_uuid}`
+        );
+        return data;
+      }
+      // { refetchInterval: 1000 }
+    );
+  const addToStory = useMutation(
+    ({ story_uuid, segment }: { story_uuid: string; segment: string }) =>
+      axios.put(
+        `${config.baseUrl}/story/${story_uuid}?content=${encodeURI(segment)}`
+      )
+  );
+
+  const [content, setContent] = useState<string>("");
+
   const location = useLocation();
-  const user = new URLSearchParams(location.search).get("user");
+  const story_uuid = location.pathname.slice(1); // remove beginning slash
 
-  const [story, setStory] = useState<Story | undefined>();
-  const [currentSegmentContent, setCurrentSegmentContent] =
-    useState<string>("Write here.");
+  const { isLoading, isError, data, error } = useStory(story_uuid);
 
-  const submitStorySegment = async () => {
-    await fetch(
-      `http://localhost:8000/story${location.pathname}?content=${encodeURI(
-        currentSegmentContent
-      )}`,
-      {
-        method: "PUT",
-        headers: { "x-user": user! },
-      }
-    );
-  };
+  if (isLoading) {
+    return <Spinner />;
+  }
+  if (isError) {
+    return <div>Error: {error}</div>;
+  }
 
-  const isCurrentUserTurn = story
-    ? story!.whose_turn_is_it.name === user
-    : false;
+  const isCurrentUserTurn = data!.whose_turn_is_it.single_player;
+  const isAiTurn = data!.whose_turn_is_it.ai_player;
 
-  const fetchStory = async () => {
-    const response = await fetch(
-      `http://localhost:8000/story${location.pathname}`,
-      {
-        method: "GET",
-      }
-    );
-    const story = await response.json();
-    setStory(story);
-  };
-  useEffect(() => {
-    fetchStory();
-  }, []);
+  // reshape segments such that segments with multiple lines are rendered
+  // as <br/>'s
+  const elems: (Sentence | SentenceBreak)[] = [];
+  data!.segments.forEach((segment) => {
+    const [firstLine, ...remainingLines] = segment.content.split("\n");
+    elems.push({ content: firstLine, author: segment.author } as Sentence);
+    remainingLines.forEach((remainingLine) => {
+      elems.push({ content: "" } as SentenceBreak);
+      elems.push({
+        content: remainingLine,
+        author: segment.author,
+      } as Sentence);
+    });
+  });
 
-  return story ? (
+  return (
     <Box bg="white" borderRadius="5" shadow="xs">
       <VStack p={15}>
         <Box textAlign="center" fontSize="xl" p={10}>
-          {story.segments.map((segment, index) => (
-            <Tooltip
-              label={
-                segment.author.single_player
-                  ? "Written by you"
-                  : segment.author.ai_player
-                  ? "Written by AI player"
-                  : `Written by ${segment.author.name}`
-              }
-              placement="top"
-            >
-              <Text
-                as="span"
-                key={index}
-                borderRadius="5"
-                background={
-                  segment.author.single_player ? "gray.50" : "green.50"
-                }
-                p={1}
-              >
-                {segment.content}
-              </Text>
-            </Tooltip>
-          ))}
-          {isCurrentUserTurn && (
-            <Text
-              as="span"
-              borderRadius="5"
-              shadow={currentSegmentContent === "Write here." ? "outline" : ""}
-              contentEditable={true}
-              suppressContentEditableWarning={true}
-              color={
-                currentSegmentContent === "Write here." ? "gray.400" : "black"
-              }
-              onBlur={(e) => {
-                setCurrentSegmentContent(e.target.innerText);
-              }}
-            >
-              Write here.
-            </Text>
+          {elems.map((elem) => {
+            if (elem.content === "") {
+              return <br />;
+            } else {
+              return <Text as="span">{elem.content} </Text>;
+            }
+          })}
+          {isCurrentUserTurn ? (
+            <WriteField content={content} setContent={setContent} />
+          ) : (
+            <BeatLoader size={7} />
           )}
         </Box>
         <HStack p={10}>
-          <ButtonGroup size="sm" isAttached variant="solid">
-            <Button onClick={submitStorySegment} disabled={!isCurrentUserTurn}>
+          <ButtonGroup size="sm" isAttached variant="outline">
+            <Button
+              onClick={() => {
+                setContent("");
+                addToStory.mutate({
+                  story_uuid: story_uuid,
+                  segment: content,
+                });
+              }}
+              disabled={!isCurrentUserTurn}
+            >
               Add this to the story
             </Button>
             <Popover>
               <PopoverTrigger>
-                <Button colorScheme="teal">Invite another player</Button>
+                <Button>Invite another player</Button>
               </PopoverTrigger>
               <PopoverContent>
                 <PopoverArrow />
@@ -128,7 +132,7 @@ const Canvas = () => {
                       will know who is inviting them.
                     </Text>
                     <ButtonGroup d="flex" justifyContent="left">
-                      <Button leftIcon={<FaUserCircle />}>Log in</Button>
+                      <LogInButton />
                     </ButtonGroup>
                   </VStack>
                 </PopoverBody>
@@ -138,8 +142,6 @@ const Canvas = () => {
         </HStack>
       </VStack>
     </Box>
-  ) : (
-    <Spinner />
   );
 };
 
