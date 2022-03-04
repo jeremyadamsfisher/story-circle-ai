@@ -24,14 +24,7 @@ import LogInButton from "./components/LogInButton";
 import config from "./config";
 import BeatLoader from "react-spinners/BeatLoader";
 
-type SentenceBreak = {
-  content: string;
-};
 type Sentence = Segment;
-
-const isSentence = (x: any): x is Sentence => {
-  return (x as Sentence) !== undefined;
-};
 
 const Canvas = () => {
   const useStory = (story_uuid: string) =>
@@ -42,8 +35,8 @@ const Canvas = () => {
           `${config.baseUrl}/story/${story_uuid}`
         );
         return data;
-      }
-      // { refetchInterval: 1000 }
+      },
+      { refetchInterval: 1000 }
     );
   const addToStory = useMutation(
     ({ story_uuid, segment }: { story_uuid: string; segment: string }) =>
@@ -71,12 +64,12 @@ const Canvas = () => {
 
   // reshape segments such that segments with multiple lines are rendered
   // as <br/>'s
-  const elems: (Sentence | SentenceBreak)[] = [];
+  const elems: (Sentence | null)[] = [];
   data!.segments.forEach((segment) => {
     const [firstLine, ...remainingLines] = segment.content.split("\n");
     elems.push({ content: firstLine, author: segment.author } as Sentence);
     remainingLines.forEach((remainingLine) => {
-      elems.push({ content: "" } as SentenceBreak);
+      elems.push(null); // flag to render <br/> - can this be merged?
       elems.push({
         content: remainingLine,
         author: segment.author,
@@ -88,13 +81,9 @@ const Canvas = () => {
     <Box bg="white" borderRadius="5" shadow="xs">
       <VStack p={15}>
         <Box textAlign="center" fontSize="xl" p={10}>
-          {elems.map((elem) => {
-            if (elem.content === "") {
-              return <br />;
-            } else {
-              return <Text as="span">{elem.content} </Text>;
-            }
-          })}
+          {elems.map((elem) =>
+            elem ? <Text as="span">{elem.content} </Text> : <br />
+          )}
           {isCurrentUserTurn ? (
             <WriteField content={content} setContent={setContent} />
           ) : (
