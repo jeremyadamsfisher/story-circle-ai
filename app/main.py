@@ -1,23 +1,35 @@
 import logging
+import os
 import warnings
 from typing import Optional
 
-from fastapi import APIRouter, BackgroundTasks, Depends, FastAPI, Header, HTTPException
+from fastapi import (APIRouter, BackgroundTasks, Depends, FastAPI, Header,
+                     HTTPException, Security)
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi_auth0 import Auth0, Auth0User
 from sqlmodel import Session
 
 from . import crud
+# from .auth import verify_token
 from .db import get_session
 from .game import perform_ai_turn
-from .models import PlayerOrder, Story, StoryNew, StoryRead, StorySegment
+from .models import (PlayerOrder, Story, StoryNew, StoryRead, StorySegment,
+                     UserStoriesRead)
 
 logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.INFO)
+
 warnings.filterwarnings(
     "ignore", ".*Class SelectOfScalar will not make use of SQL compilation caching.*"
 )
+
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Faboo")
+auth = Auth0(
+    domain=os.environ["DOMAIN"],
+    api_audience=os.environ["API_AUDIENCE"],
+)
+
+app = FastAPI(title="Story Circle")
 
 
 origins = [
@@ -34,6 +46,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.get("/oauth2-redirect")
+def oauth2_redirect():
+    """redirect to the story view from which the user came"""
+    return {"message": "hello auth0!"}
+
+
 story_router = APIRouter()
 
 
@@ -41,7 +60,7 @@ story_router = APIRouter()
 def new_story(
     *,
     session: Session = Depends(get_session),
-    x_user: Optional[str] = Header(None, description="whomever the user claims to be"),
+    x_user: Optional[str] = Header(None, description="whoever the user claims to be"),
 ):
     if x_user:
         user = crud.get_user(x_user, session)
@@ -85,7 +104,7 @@ def append_to_story(
         raise HTTPException(404)
 
     if x_user:
-        author = crud.get_user(x_user, session)
+        author = crud.get_user_by_name(x_user, session)
     else:
         author = crud.get_single_player_user(session)
 
@@ -113,3 +132,25 @@ def append_to_story(
 
 
 app.include_router(story_router, prefix="/story", tags=["story"])
+
+
+user = APIRouter()
+
+
+@user.get(
+    "/",
+    dependencies=[Depends(auth.implicit_scheme)],
+    response_model=UserStoriesRead,
+)
+def get_user_stories(
+    session: Session = Depends(get_session),
+    auth0user: Auth0User = Security(auth.get_user),
+):
+    user = crud.get_user_by_name(name=auth0user.email, session=session)
+    try:
+        return crud.get_stories_originated_by_user(user.id, session)
+    except crud.DbNotFound:
+        raise HTTPException(404, "user not found")
+
+
+app.include_router(user, prefix="/user", tags=["user"])

@@ -13,6 +13,8 @@ logger = logging.getLogger(__name__)
 
 N_FAILURES_ALLOWED = 10
 MAX_PROMPT_LENGTH = 50
+WORDS_THAT_CAN_HAVE_A_PERIOD = ["mr" "ms" "mrs" "jr" "sr"]
+
 text_generator = pipeline("text-generation", "pranavpsv/gpt2-genre-story-generator")
 
 
@@ -30,7 +32,7 @@ class InferenceProblemEmptyPrediction(Exception):
 
 def next_segment_prediction(prompt: str) -> str:
     prompt = prompt.strip()
-    prompt_full = ("<BOS> <action> " + prompt + " ")[-MAX_PROMPT_LENGTH:]
+    prompt_full = (prompt + " ")[-MAX_PROMPT_LENGTH:]
     (text_gen_raw,) = text_generator(prompt_full)
     text_gen_raw = text_gen_raw["generated_text"]
     text_gen_raw = text_gen_raw[len(prompt_full) :]

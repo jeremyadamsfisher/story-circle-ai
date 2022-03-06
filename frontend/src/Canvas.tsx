@@ -1,4 +1,5 @@
 import {
+  Kbd,
   HStack,
   Spinner,
   Text,
@@ -91,43 +92,28 @@ const Canvas = () => {
           )}
         </Box>
         <HStack p={10}>
-          <ButtonGroup size="sm" isAttached variant="outline">
-            <Button
-              onClick={() => {
-                setContent("");
-                addToStory.mutate({
-                  story_uuid: story_uuid,
-                  segment: content,
-                });
-              }}
-              disabled={!isCurrentUserTurn}
-            >
-              Add this to the story
-            </Button>
-            <Popover>
-              <PopoverTrigger>
-                <Button>Invite another player</Button>
-              </PopoverTrigger>
-              <PopoverContent>
-                <PopoverArrow />
-                <PopoverCloseButton />
-                <PopoverHeader pt={4} fontWeight="bold" border="0">
-                  Hold on a sec!
-                </PopoverHeader>
-                <PopoverBody>
-                  <VStack>
-                    <Text>
-                      Before you can invite a player, you need to log in so they
-                      will know who is inviting them.
-                    </Text>
-                    <ButtonGroup d="flex" justifyContent="left">
-                      <LogInButton />
-                    </ButtonGroup>
-                  </VStack>
-                </PopoverBody>
-              </PopoverContent>
-            </Popover>
-          </ButtonGroup>
+          <span>
+            to end your turn, type
+          </span>
+          <span>
+            <Kbd>shift</Kbd> + <Kbd>enter</Kbd>
+          </span>
+          <span>
+            or click on
+          </span>
+          <Button
+            colorScheme="purple"
+            onClick={() => {
+              setContent("");
+              addToStory.mutate({
+                story_uuid: story_uuid,
+                segment: content,
+              });
+            }}
+            disabled={!isCurrentUserTurn}
+          >
+            end turn
+          </Button>
         </HStack>
       </VStack>
     </Box>

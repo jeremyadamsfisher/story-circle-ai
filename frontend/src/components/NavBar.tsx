@@ -1,9 +1,12 @@
 import { FaLink } from "react-icons/fa";
 import { chakra, Flex, HStack, Text, Avatar } from "@chakra-ui/react";
+import { useAuth0 } from '@auth0/auth0-react';
 import LogInButton from "./LogInButton";
 
-const NavBar = () => (
-  <chakra.header w="full" px={{ base: 2, sm: 4 }} py={4} shadow="sm">
+
+const NavBar = () => {
+  const { isAuthenticated, user } = useAuth0();
+  return <chakra.header w="full" px={{ base: 2, sm: 4 }} py={4}>
     <Flex alignItems="center" justifyContent="space-between" mx="auto">
       <Flex>
         <chakra.h1 fontSize="xl" fontWeight="bold" ml="2">
@@ -16,11 +19,10 @@ const NavBar = () => (
         </chakra.h1>
       </Flex>
       <Flex>
-        <LogInButton />
-        {/* <Avatar size="sm" name="single-player" /> */}
+        {isAuthenticated ? <Avatar size="sm" name={user?.name} /> : <LogInButton />}
       </Flex>
     </Flex>
   </chakra.header>
-);
+}
 
 export default NavBar;
