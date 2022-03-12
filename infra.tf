@@ -1,3 +1,8 @@
+locals {
+  admin_email = "jeremy.adams.fisher@gmail.com"
+}
+
+
 data "google_client_config" "gcc" {}
 
 provider "google" {
@@ -46,14 +51,14 @@ resource "google_sql_user" "sa" {
 }
 
 resource "google_sql_user" "admin" {
-  name     = "jeremy.adams.fisher@gmail.com"
+  name     = local.admin_email
   instance = google_sql_database_instance.db.name
   type     = "CLOUD_IAM_USER"
 }
 
 resource "google_project_iam_binding" "sa" {
   project = data.google_client_config.gcc.project
-  members = ["serviceAccount:${google_service_account.sa.email}"]
+  members = ["serviceAccount:${google_service_account.sa.email}", "user:${local.admin_email}"]
   for_each = toset([
     "roles/cloudsql.client",
     "roles/cloudsql.instanceUser",

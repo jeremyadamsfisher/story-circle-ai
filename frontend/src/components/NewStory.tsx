@@ -18,7 +18,7 @@ const NewStory = () => {
   useEffect(() => {
     fetchNewStory();
   }, []);
-  return newStory ? <Navigate to={`/${newStory.story_uuid}`} /> : <Spinner />;
+  return newStory ? <Navigate to={`/g/${newStory.story_uuid}`} /> : <Spinner />;
 };
 
 export default NewStory;

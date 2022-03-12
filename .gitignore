@@ -746,3 +746,4 @@ creds.json
 story-circle-ai-850a578c121d.json
 .envrc
 **auth0config.json
+**/*tfstate*

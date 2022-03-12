@@ -1,20 +1,43 @@
+from dotenv import load_dotenv
+from loguru import logger
+from pathlib import Path
+
+if Path("./.env").exists():
+    logger.info(".env detected")
+    load_dotenv()
+else:
+    logger.warning(".env file does not exists, falling down to environment variables")
+
 import logging
 import os
 import warnings
 from typing import Optional
 
-from fastapi import (APIRouter, BackgroundTasks, Depends, FastAPI, Header,
-                     HTTPException, Security)
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    FastAPI,
+    Header,
+    HTTPException,
+)
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi_auth0 import Auth0, Auth0User
+
 from sqlmodel import Session
 
 from . import crud
-# from .auth import verify_token
+from .auth import get_user_from_request
 from .db import get_session
 from .game import perform_ai_turn
-from .models import (PlayerOrder, Story, StoryNew, StoryRead, StorySegment,
-                     UserStoriesRead)
+from .models import (
+    PlayerOrder,
+    Story,
+    StoryNew,
+    StoryRead,
+    StorySegment,
+    UserStoriesRead,
+)
+
 
 logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.INFO)
 
@@ -24,10 +47,6 @@ warnings.filterwarnings(
 
 logger = logging.getLogger(__name__)
 
-auth = Auth0(
-    domain=os.environ["DOMAIN"],
-    api_audience=os.environ["API_AUDIENCE"],
-)
 
 app = FastAPI(title="Story Circle")
 
@@ -139,14 +158,11 @@ user = APIRouter()
 
 @user.get(
     "/",
-    dependencies=[Depends(auth.implicit_scheme)],
-    response_model=UserStoriesRead,
+    # response_model=UserStoriesRead,
 )
 def get_user_stories(
-    session: Session = Depends(get_session),
-    auth0user: Auth0User = Security(auth.get_user),
+    session: Session = Depends(get_session), user=Depends(get_user_from_request)
 ):
-    user = crud.get_user_by_name(name=auth0user.email, session=session)
     try:
         return crud.get_stories_originated_by_user(user.id, session)
     except crud.DbNotFound:
