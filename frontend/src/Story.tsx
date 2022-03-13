@@ -10,6 +10,7 @@ export interface Segment {
 }
 
 interface WhoseTurnIsIt {
+  name: string;
   single_player: boolean;
   ai_player: boolean;
 }

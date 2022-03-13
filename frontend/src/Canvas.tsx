@@ -1,12 +1,7 @@
-import {
-  Kbd,
-  HStack,
-  Spinner,
-  Text,
-  VStack,
-  Box,
-  Button,
-} from "@chakra-ui/react";
+import { QuestionIcon, SettingsIcon } from "@chakra-ui/icons";
+import { Center, Spinner, VStack, Text, Box, Button } from "@chakra-ui/react";
+import { FaUserPlus } from "react-icons/fa";
+import { VscDebugContinue } from "react-icons/vsc";
 import axios from "axios";
 import { useQuery, useMutation } from "react-query";
 import { useState } from "react";
@@ -16,11 +11,13 @@ import WriteField from "./components/WriteField";
 import config from "./config";
 import BeatLoader from "react-spinners/BeatLoader";
 import { useAuth0 } from "@auth0/auth0-react";
+import auth0config from "./auth0config.json";
+import CenterSpinner from "./components/CenterSpinner";
 
 type Sentence = Segment;
 
 const Canvas = () => {
-  const { getAccessTokenSilently, isAuthenticated } = useAuth0();
+  const auth0 = useAuth0();
 
   const useStory = (story_uuid: string) =>
     useQuery<Story, Error>(
@@ -42,19 +39,22 @@ const Canvas = () => {
       story_uuid: string;
       segment: string;
     }) => {
-      if (isAuthenticated) {
-        const token = await getAccessTokenSilently();
-        axios.put(
-          `${config.baseUrl}/story/${story_uuid}?content=${encodeURI(segment)}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+      if (auth0.isAuthenticated) {
+        const token = await auth0.getAccessTokenSilently({
+          audience: auth0config.audience,
+        });
+        axios({
+          url: `${
+            config.baseUrl
+          }/story/${story_uuid}/multiPlayer?content=${encodeURI(segment)}`,
+          method: "put",
+          headers: { Authorization: `Bearer ${token}` },
+        });
       } else {
         axios.put(
-          `${config.baseUrl}/story/${story_uuid}?content=${encodeURI(segment)}`
+          `${
+            config.baseUrl
+          }/story/${story_uuid}/singlePlayer?content=${encodeURI(segment)}`
         );
       }
     }
@@ -67,15 +67,16 @@ const Canvas = () => {
 
   const { isLoading, isError, data, error } = useStory(story_uuid);
 
-  if (isLoading) {
-    return <Spinner />;
+  if (isLoading || auth0.isLoading) {
+    return <CenterSpinner />;
   }
   if (isError) {
     return <div>Error: {error}</div>;
   }
 
-  const isCurrentUserTurn = data!.whose_turn_is_it.single_player;
-  const isAiTurn = data!.whose_turn_is_it.ai_player;
+  const isCurrentUserTurn =
+    data!.whose_turn_is_it.single_player ||
+    data!.whose_turn_is_it.name === auth0.user!.email;
 
   // reshape segments such that segments with multiple lines are rendered
   // as <br/>'s
@@ -93,8 +94,8 @@ const Canvas = () => {
   });
 
   return (
-    <Box bg="white" borderRadius="5" shadow="xs">
-      <VStack p={15}>
+    <Box>
+      <Box bg="gray.50" borderRadius="5" shadow="inner" width="100%">
         <Box textAlign="center" fontSize="xl" p={10}>
           {elems.map((elem) =>
             elem ? <Text as="span">{elem.content} </Text> : <br />
@@ -105,26 +106,31 @@ const Canvas = () => {
             <BeatLoader size={7} />
           )}
         </Box>
-        <HStack p={10}>
-          <span>to end your turn, type</span>
-          <span>
-            <Kbd>shift</Kbd> + <Kbd>enter</Kbd>
-          </span>
-          <span>or click on</span>
-          <Button
-            colorScheme="purple"
-            onClick={() => {
-              setContent("");
-              addToStory.mutate({
-                story_uuid: story_uuid,
-                segment: content,
-              });
-            }}
-            disabled={!isCurrentUserTurn}
-          >
-            end turn
-          </Button>
-        </HStack>
+      </Box>
+      <VStack p={10} spacing={3}>
+        <Button
+          onClick={() => {
+            setContent("");
+            addToStory.mutate({
+              story_uuid: story_uuid,
+              segment: content,
+            });
+          }}
+          disabled={!isCurrentUserTurn}
+          w="250px"
+          rightIcon={<VscDebugContinue />}
+        >
+          end turn
+        </Button>
+        <Button w="250px" variant="outline" rightIcon={<FaUserPlus />}>
+          invite another player
+        </Button>
+        <Button w="250px" variant="outline" rightIcon={<SettingsIcon />}>
+          change ai settings
+        </Button>
+        <Button w="250px" variant="outline" rightIcon={<QuestionIcon />}>
+          how do i play this game
+        </Button>
       </VStack>
     </Box>
   );

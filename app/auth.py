@@ -40,16 +40,13 @@ def get_user_from_request(
     session: Session = Depends(get_session),
     token: HTTPAuthorizationCredentials = Depends(token_auth_scheme),
 ):
-    if token:
-        try:
-            payload = verify_token(token.credentials)
-        except Exception as e:
-            logger.error(e)
-            raise HTTPException(401, "could not verify token")
+    try:
+        payload = verify_token(token.credentials)
+    except Exception as e:
+        logger.error(e)
+        raise HTTPException(401, "could not verify token")
 
-        (email_key,) = [k for k in payload.keys() if "email" in k]
-        email = payload[email_key]
+    (email_key,) = [k for k in payload.keys() if "email" in k]
+    email = payload[email_key]
 
-        return crud.get_user_by_name(email, session)
-
-    return crud.get_single_player_user(session)
+    return crud.get_user_by_name(email, session)

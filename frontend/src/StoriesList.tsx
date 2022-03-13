@@ -1,7 +1,7 @@
 import axios from "axios";
 import {
   Alert,
-  Spinner,
+  Heading,
   AlertIcon,
   AlertTitle,
   AlertDescription,
@@ -12,6 +12,7 @@ import {
 } from "@chakra-ui/react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { useQuery } from "react-query";
+import CenterSpinner from "./components/CenterSpinner";
 import auth0config from "./auth0config.json";
 import config from "./config";
 
@@ -26,7 +27,6 @@ const StoryList = () => {
   const query = useQuery<StoryListData, Error>("storyList", async () => {
     const token = await auth0.getAccessTokenSilently({
       audience: auth0config.audience,
-      scope: "read:storylist",
     });
     const { data } = await axios.get(`${config.baseUrl}/user`, {
       headers: {
@@ -38,7 +38,7 @@ const StoryList = () => {
   });
 
   if (auth0.isLoading || query.isLoading) {
-    return <Spinner />;
+    return <CenterSpinner />;
   }
 
   if (!auth0.isAuthenticated) {
@@ -55,11 +55,14 @@ const StoryList = () => {
 
   return (
     <HStack>
+      <Heading size="md">Stories Originated</Heading>
       <List>
         {query.data!.stories_originated.map((x) => (
           <ListItem>{x}</ListItem>
         ))}
       </List>
+      <br />
+      <Heading size="md">Stories Participated In</Heading>
       <List>
         {query.data!.stories_participated_in.map((x) => (
           <ListItem>{x}</ListItem>

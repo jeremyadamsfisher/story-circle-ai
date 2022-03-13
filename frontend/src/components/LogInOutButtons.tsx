@@ -1,25 +1,34 @@
-import { Button } from "@chakra-ui/react";
+import { Button, ButtonProps, useMediaQuery } from "@chakra-ui/react";
 import { FaUserCircle } from "react-icons/fa";
 import { useAuth0 } from "@auth0/auth0-react";
 
-const LogInButton = () => {
+const LogInButton: React.FC<ButtonProps> = (props) => {
+  const [isMobile] = useMediaQuery("(max-width: 768px)");
   const { loginWithRedirect } = useAuth0();
+  if (isMobile) {
+    return (
+      <Button variant="ghost" onClick={() => loginWithRedirect()} {...props}>
+        log in
+      </Button>
+    );
+  }
   return (
     <Button
-      colorScheme="purple"
       onClick={() => loginWithRedirect()}
+      variant="ghost"
       leftIcon={<FaUserCircle />}
+      {...props}
     >
-      Log in
+      log in
     </Button>
   );
 };
 
-const LogOutButton = () => {
+const LogOutButton: React.FC<ButtonProps> = (props) => {
   const { logout } = useAuth0();
   return (
-    <Button colorScheme="purple" onClick={() => logout()}>
-      Log out
+    <Button onClick={() => logout()} variant="secondary" {...props}>
+      log out
     </Button>
   );
 };
