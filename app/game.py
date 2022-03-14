@@ -13,6 +13,8 @@ logger = logging.getLogger(__name__)
 
 N_FAILURES_ALLOWED = 10
 MAX_PROMPT_LENGTH = 50
+WORDS_THAT_CAN_HAVE_A_PERIOD = ["mr" "ms" "mrs" "jr" "sr"]
+
 text_generator = pipeline("text-generation", "pranavpsv/gpt2-genre-story-generator")
 
 
@@ -29,18 +31,21 @@ class InferenceProblemEmptyPrediction(Exception):
 
 
 def next_segment_prediction(prompt: str) -> str:
-    prompt_full = ("<BOS> <action> " + prompt)[-MAX_PROMPT_LENGTH:]
-    (text_gen,) = text_generator(prompt_full)
-    text_gen = text_gen["generated_text"]
-    text_gen = "".join(c for c in text_gen if c in string.printable)
+    prompt = prompt.strip()
+    prompt_full = (prompt + " ")[-MAX_PROMPT_LENGTH:]
+    (text_gen_raw,) = text_generator(prompt_full)
+    text_gen_raw = text_gen_raw["generated_text"]
+    text_gen_raw = text_gen_raw[len(prompt_full) :]
+    text_gen = "".join(c for c in text_gen_raw if c in string.printable)
     try:
-        (text_gen,) = re.match(r"^(.*?\.)", text_gen).groups()
+        (text_gen,) = re.match(r"\W*(\w.*?\.)", text_gen).groups()
     except (ValueError, AttributeError):
         raise InferenceProblemNotASentence(f"invalid sentence: {text_gen}")
-    text_gen = text_gen[len(prompt_full) :]
     if len(text_gen) == 0:
+        breakpoint()
         raise InferenceProblemEmptyPrediction(
-            f"unable to generate from prompt: {prompt_full}"
+            f"unable to generate from prompt: {prompt_full}\n"
+            f"generated text: {text_gen_raw}"
         )
     return text_gen
 

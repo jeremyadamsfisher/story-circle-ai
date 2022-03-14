@@ -9,6 +9,7 @@ class User(SQLModel, table=True):
     __tablename__ = "users"
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str
+    # email: Optional[str]
     story_segments: List["StorySegment"] = Relationship(back_populates="author")
     stories_originated: List["Story"] = Relationship(back_populates="original_author")
     player_ordering: List["PlayerOrder"] = Relationship(back_populates="user")
@@ -84,3 +85,11 @@ class StoryNew(SQLModel):
     story_uuid: str
     original_author: UserRead
     single_player_mode: bool
+
+
+class UserStoriesRead(SQLModel):
+    """catalog of all stories (that is, the primary keys of all stories) that a
+    user has begun or participated in"""
+
+    stories_originated: List[int]
+    stories_participated_in: List[int]

@@ -743,3 +743,7 @@ FodyWeavers.xsd
 # End of https://www.toptal.com/developers/gitignore/api/python,macos,visualstudio,vim,node
 
 creds.json
+story-circle-ai-850a578c121d.json
+.envrc
+**auth0config.json
+**/*tfstate*

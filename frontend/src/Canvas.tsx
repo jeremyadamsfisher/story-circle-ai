@@ -1,145 +1,138 @@
-import {
-  HStack,
-  Stack,
-  Skeleton,
-  Spinner,
-  Text,
-  VStack,
-  Box,
-  Button,
-  ButtonGroup,
-  Tooltip,
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-  PopoverBody,
-  PopoverArrow,
-  PopoverCloseButton,
-  PopoverHeader,
-} from "@chakra-ui/react";
-import { useEffect, useState } from "react";
-import { FaUserCircle } from "react-icons/fa";
+import { QuestionIcon, SettingsIcon } from "@chakra-ui/icons";
+import { Center, Spinner, VStack, Text, Box, Button } from "@chakra-ui/react";
+import { FaUserPlus } from "react-icons/fa";
+import { VscDebugContinue } from "react-icons/vsc";
+import axios from "axios";
+import { useQuery, useMutation } from "react-query";
+import { useState } from "react";
 import { useLocation } from "react-router-dom";
-import { Story } from "./Story";
+import { Story, Segment } from "./Story";
+import WriteField from "./components/WriteField";
+import config from "./config";
+import BeatLoader from "react-spinners/BeatLoader";
+import { useAuth0 } from "@auth0/auth0-react";
+import auth0config from "./auth0config.json";
+import CenterSpinner from "./components/CenterSpinner";
+
+type Sentence = Segment;
 
 const Canvas = () => {
+  const auth0 = useAuth0();
+
+  const useStory = (story_uuid: string) =>
+    useQuery<Story, Error>(
+      story_uuid,
+      async () => {
+        const { data } = await axios.get(
+          `${config.baseUrl}/story/${story_uuid}`
+        );
+        return data;
+      },
+      { refetchInterval: 1000 }
+    );
+
+  const addToStory = useMutation(
+    async ({
+      story_uuid,
+      segment,
+    }: {
+      story_uuid: string;
+      segment: string;
+    }) => {
+      if (auth0.isAuthenticated) {
+        const token = await auth0.getAccessTokenSilently({
+          audience: auth0config.audience,
+        });
+        axios({
+          url: `${
+            config.baseUrl
+          }/story/${story_uuid}/multiPlayer?content=${encodeURI(segment)}`,
+          method: "put",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } else {
+        axios.put(
+          `${
+            config.baseUrl
+          }/story/${story_uuid}/singlePlayer?content=${encodeURI(segment)}`
+        );
+      }
+    }
+  );
+
+  const [content, setContent] = useState<string>("");
+
   const location = useLocation();
-  const user = new URLSearchParams(location.search).get("user");
+  const story_uuid = location.pathname.slice(3); // remove beginning `/g/`
 
-  const [story, setStory] = useState<Story | undefined>();
-  const [currentSegmentContent, setCurrentSegmentContent] =
-    useState<string>("Write here.");
+  const { isLoading, isError, data, error } = useStory(story_uuid);
 
-  const submitStorySegment = async () => {
-    await fetch(
-      `http://localhost:8000/story${location.pathname}?content=${encodeURI(
-        currentSegmentContent
-      )}`,
-      {
-        method: "PUT",
-        headers: { "x-user": user! },
-      }
-    );
-  };
+  if (isLoading || auth0.isLoading) {
+    return <CenterSpinner />;
+  }
+  if (isError) {
+    return <div>Error: {error}</div>;
+  }
 
-  const isCurrentUserTurn = story
-    ? story!.whose_turn_is_it.name === user
-    : false;
+  const isCurrentUserTurn =
+    data!.whose_turn_is_it.single_player ||
+    data!.whose_turn_is_it.name === auth0.user!.email;
 
-  const fetchStory = async () => {
-    const response = await fetch(
-      `http://localhost:8000/story${location.pathname}`,
-      {
-        method: "GET",
-      }
-    );
-    const story = await response.json();
-    setStory(story);
-  };
-  useEffect(() => {
-    fetchStory();
-  }, []);
+  // reshape segments such that segments with multiple lines are rendered
+  // as <br/>'s
+  const elems: (Sentence | null)[] = [];
+  data!.segments.forEach((segment) => {
+    const [firstLine, ...remainingLines] = segment.content.split("\n");
+    elems.push({ content: firstLine, author: segment.author } as Sentence);
+    remainingLines.forEach((remainingLine) => {
+      elems.push(null); // flag to render <br/> - can this be merged?
+      elems.push({
+        content: remainingLine,
+        author: segment.author,
+      } as Sentence);
+    });
+  });
 
-  return story ? (
-    <Box bg="white" borderRadius="5" shadow="xs">
-      <VStack p={15}>
+  return (
+    <Box>
+      <Box bg="gray.50" borderRadius="5" shadow="inner" width="100%">
         <Box textAlign="center" fontSize="xl" p={10}>
-          {story.segments.map((segment, index) => (
-            <Tooltip
-              label={
-                segment.author.single_player
-                  ? "Written by you"
-                  : segment.author.ai_player
-                  ? "Written by AI player"
-                  : `Written by ${segment.author.name}`
-              }
-              placement="top"
-            >
-              <Text
-                as="span"
-                key={index}
-                borderRadius="5"
-                background={
-                  segment.author.single_player ? "gray.50" : "green.50"
-                }
-                p={1}
-              >
-                {segment.content}
-              </Text>
-            </Tooltip>
-          ))}
-          {isCurrentUserTurn && (
-            <Text
-              as="span"
-              borderRadius="5"
-              shadow={currentSegmentContent === "Write here." ? "outline" : ""}
-              contentEditable={true}
-              suppressContentEditableWarning={true}
-              color={
-                currentSegmentContent === "Write here." ? "gray.400" : "black"
-              }
-              onBlur={(e) => {
-                setCurrentSegmentContent(e.target.innerText);
-              }}
-            >
-              Write here.
-            </Text>
+          {elems.map((elem) =>
+            elem ? <Text as="span">{elem.content} </Text> : <br />
+          )}
+          {isCurrentUserTurn ? (
+            <WriteField content={content} setContent={setContent} />
+          ) : (
+            <BeatLoader size={7} />
           )}
         </Box>
-        <HStack p={10}>
-          <ButtonGroup size="sm" isAttached variant="solid">
-            <Button onClick={submitStorySegment} disabled={!isCurrentUserTurn}>
-              Add this to the story
-            </Button>
-            <Popover>
-              <PopoverTrigger>
-                <Button colorScheme="teal">Invite another player</Button>
-              </PopoverTrigger>
-              <PopoverContent>
-                <PopoverArrow />
-                <PopoverCloseButton />
-                <PopoverHeader pt={4} fontWeight="bold" border="0">
-                  Hold on a sec!
-                </PopoverHeader>
-                <PopoverBody>
-                  <VStack>
-                    <Text>
-                      Before you can invite a player, you need to log in so they
-                      will know who is inviting them.
-                    </Text>
-                    <ButtonGroup d="flex" justifyContent="left">
-                      <Button leftIcon={<FaUserCircle />}>Log in</Button>
-                    </ButtonGroup>
-                  </VStack>
-                </PopoverBody>
-              </PopoverContent>
-            </Popover>
-          </ButtonGroup>
-        </HStack>
+      </Box>
+      <VStack p={10} spacing={3}>
+        <Button
+          onClick={() => {
+            setContent("");
+            addToStory.mutate({
+              story_uuid: story_uuid,
+              segment: content,
+            });
+          }}
+          disabled={!isCurrentUserTurn}
+          w="250px"
+          rightIcon={<VscDebugContinue />}
+        >
+          end turn
+        </Button>
+        <Button w="250px" variant="outline" rightIcon={<FaUserPlus />}>
+          invite another player
+        </Button>
+        <Button w="250px" variant="outline" rightIcon={<SettingsIcon />}>
+          change ai settings
+        </Button>
+        <Button w="250px" variant="outline" rightIcon={<QuestionIcon />}>
+          how do i play this game
+        </Button>
       </VStack>
     </Box>
-  ) : (
-    <Spinner />
   );
 };
 

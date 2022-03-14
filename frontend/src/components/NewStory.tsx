@@ -1,37 +1,48 @@
+import axios from "axios";
 import { Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Spinner } from "@chakra-ui/react";
-
-interface Author {
-  name: string;
-}
+import { useAuth0 } from "@auth0/auth0-react";
+import CenterSpinner from "./CenterSpinner";
+import auth0config from "../auth0config.json";
+import config from "../config";
 
 interface NewStoryModel {
   story_uuid: string;
-  original_author: Author;
-  single_player_mode: boolean;
 }
 
 const NewStory = () => {
   const [newStory, setNewStory] = useState<NewStoryModel | undefined>();
+  const { isLoading, getAccessTokenSilently, isAuthenticated } = useAuth0();
   const fetchNewStory = async () => {
-    const response = await fetch("http://localhost:8000/story", {
-      method: "PUT",
-    });
-    const newStory = await response.json();
-    setNewStory(newStory);
+    if (isLoading) {
+      // not authenticated while loading
+      return;
+    }
+    if (isAuthenticated) {
+      const token = await getAccessTokenSilently({
+        audience: auth0config.audience,
+      });
+      const { data }: { data: NewStoryModel } = await axios({
+        method: "put",
+        url: `${config.baseUrl}/story/multiPlayer`,
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setNewStory(data);
+    } else {
+      const { data }: { data: NewStoryModel } = await axios.put(
+        `${config.baseUrl}/story/singlePlayer`
+      );
+      setNewStory(data);
+    }
   };
   useEffect(() => {
     fetchNewStory();
-  }, []);
-  if (newStory) {
-    return (
-      <Navigate
-        to={`/${newStory!.story_uuid}?user=${newStory!.original_author.name}`}
-      />
-    );
-  }
-  return <Spinner />;
+  }, [isLoading]);
+  return newStory ? (
+    <Navigate to={`/g/${newStory.story_uuid}`} />
+  ) : (
+    <CenterSpinner />
+  );
 };
 
 export default NewStory;
