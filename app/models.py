@@ -81,6 +81,10 @@ class StoryRead(SQLModel):
     whose_turn_is_it: UserReadWithPlayerType
 
 
+class StorySegmentNew(SQLModel):
+    content: str
+
+
 class StoryNew(SQLModel):
     story_uuid: str
     original_author: UserRead

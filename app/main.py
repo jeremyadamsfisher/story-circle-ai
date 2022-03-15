@@ -8,6 +8,7 @@ if Path("./.env").exists():
 else:
     logger.warning(".env file does not exists, falling down to environment variables")
 
+import os
 import logging
 import warnings
 
@@ -19,7 +20,6 @@ from fastapi import (
     HTTPException,
 )
 from fastapi.middleware.cors import CORSMiddleware
-
 from sqlmodel import Session
 
 from . import crud
@@ -32,6 +32,7 @@ from .models import (
     StoryNew,
     StoryRead,
     StorySegment,
+    StorySegmentNew,
     UserStoriesRead,
     User,
 )
@@ -50,32 +51,36 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="Story Circle")
 
 
-origins = [
-    "*",
-    "http://localhost",
-    "http://localhost:3000",
-]
+if os.environ["APP_ENV"] != "PRODUCTION":
+    origins = [
+        "*",
+        "http://localhost",
+        "http://localhost:3000",
+    ]
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+@app.get("/health")
+def health():
+    return {"msg": "ok"}
 
 
 story_router = APIRouter()
 
 
-@story_router.put("/singlePlayer", response_model=StoryNew)
+@story_router.post("/singlePlayer", response_model=StoryNew)
 def new_story_single_player(session: Session = Depends(get_session)):
     user = crud.get_single_player_user(session)
     return new_story(session, user, True)
 
 
-@story_router.put("/multiPlayer", response_model=StoryNew)
+@story_router.post("/multiPlayer", response_model=StoryNew)
 def new_story_multiplayer(
     session: Session = Depends(get_session),
     user=Depends(get_user_from_request),
@@ -104,41 +109,42 @@ def get_story(
 ):
     if story := crud.get_story(story_id, session):
         return story
+
     raise HTTPException(404, detail="story not found")
 
 
-@story_router.put("/{story_id}/singlePlayer", response_model=StoryRead)
+@story_router.post("/{story_id}/singlePlayer", response_model=StoryRead)
 def append_to_story_single_player(
     *,
     story_id: str,
     session: Session = Depends(get_session),
-    content: str,
     background_tasks: BackgroundTasks,
+    model: StorySegmentNew,
 ):
     author = crud.get_single_player_user(session)
     return append_to_story(
         author=author,
         story_id=story_id,
         session=session,
-        content=content,
+        content=model.content,
         background_tasks=background_tasks,
     )
 
 
-@story_router.put("/{story_id}/multiPlayer", response_model=StoryRead)
+@story_router.post("/{story_id}/multiPlayer", response_model=StoryRead)
 def append_to_story_multiplayer(
     *,
     story_id: str,
     session: Session = Depends(get_session),
-    content: str,
     background_tasks: BackgroundTasks,
     user=Depends(get_user_from_request),
+    model: StorySegmentNew,
 ):
     return append_to_story(
         author=user,
         story_id=story_id,
         session=session,
-        content=content,
+        content=model.content,
         background_tasks=background_tasks,
     )
 

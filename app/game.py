@@ -6,8 +6,9 @@ from sqlmodel import Session
 from transformers import pipeline
 
 from . import crud
-from .db import engine
 from .models import Story, StorySegment
+from .db import get_engine
+
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +43,6 @@ def next_segment_prediction(prompt: str) -> str:
     except (ValueError, AttributeError):
         raise InferenceProblemNotASentence(f"invalid sentence: {text_gen}")
     if len(text_gen) == 0:
-        breakpoint()
         raise InferenceProblemEmptyPrediction(
             f"unable to generate from prompt: {prompt_full}\n"
             f"generated text: {text_gen_raw}"
@@ -51,6 +51,7 @@ def next_segment_prediction(prompt: str) -> str:
 
 
 def perform_ai_turn(story_id):
+    engine = get_engine()
     with Session(engine) as session:
         try:
             story = crud.get_story(story_id, session)
