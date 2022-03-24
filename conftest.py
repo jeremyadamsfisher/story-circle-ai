@@ -13,12 +13,13 @@ os.environ["MAIL_PORT"] = "42"
 from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
 
-from app import crud, main
-from app.auth import get_user_from_request
-from app.db import get_session
-from app.lib.email import email_client
-from app.main import app
-from app.models import *
+from backend import crud
+from backend.routers import story
+from backend.auth import get_user_from_request
+from backend.db import get_session
+from backend.lib.email import email_client
+from backend.main import app
+from backend.models import *
 
 SQLALCHEMY_DATABASE_URL = "sqlite://"
 
@@ -72,7 +73,7 @@ def client_context(session: Session, monkeypatch):
         session.add(story)
         session.commit()
 
-    monkeypatch.setattr(main, "perform_ai_turn", test_perform_ai_turn)
+    monkeypatch.setattr(story, "perform_ai_turn", test_perform_ai_turn)
 
     def get_session_override():
         return session

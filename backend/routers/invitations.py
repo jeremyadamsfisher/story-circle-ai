@@ -14,7 +14,7 @@ from ..lib.email import email_client
 from ..lib.shims import APIRouter
 from ..models import PlayerOrder
 
-invitations = APIRouter()
+router = APIRouter()
 
 INVITE_HTML = """
 <p>You've been invited to work on a story with AI agents!</p>
@@ -27,7 +27,7 @@ class Invitation(BaseModel):
     other_player_email: str
 
 
-@invitations.post("/")
+@router.post("/")
 async def invite_user(
     *,
     session: Session = Depends(get_session),
