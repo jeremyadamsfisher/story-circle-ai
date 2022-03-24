@@ -6,9 +6,8 @@ from sqlmodel import Session
 from transformers import pipeline
 
 from . import crud
-from .models import Story, StorySegment
 from .db import get_engine
-
+from .models import Story, StorySegment
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +69,7 @@ def perform_ai_turn(story_id):
                     story=story,
                     content=next_segment_content,
                     ai_generated=True,
+                    order=len(story.segments),
                 )
                 story.segments.append(segment)
                 session.add(story)

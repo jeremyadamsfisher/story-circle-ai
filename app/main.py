@@ -1,6 +1,10 @@
-from dotenv import load_dotenv
-from loguru import logger
+import logging
 from pathlib import Path
+
+logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+from dotenv import load_dotenv
 
 if Path("./.env").exists():
     logger.info(".env detected")
@@ -9,16 +13,9 @@ else:
     logger.warning(".env file does not exists, falling down to environment variables")
 
 import os
-import logging
 import warnings
 
-from fastapi import (
-    APIRouter,
-    BackgroundTasks,
-    Depends,
-    FastAPI,
-    HTTPException,
-)
+from fastapi import APIRouter, BackgroundTasks, Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session
 
@@ -26,6 +23,7 @@ from . import crud
 from .auth import get_user_from_request
 from .db import get_session
 from .game import perform_ai_turn
+from .lib.shims import APIRouter
 from .models import (
     PlayerOrder,
     Story,
@@ -33,19 +31,14 @@ from .models import (
     StoryRead,
     StorySegment,
     StorySegmentNew,
-    UserStoriesRead,
     User,
+    UserStoriesRead,
 )
-
-
-logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.INFO)
 
 
 warnings.filterwarnings(
     "ignore", ".*Class SelectOfScalar will not make use of SQL compilation caching.*"
 )
-
-logger = logging.getLogger(__name__)
 
 
 app = FastAPI(title="Story Circle")
@@ -85,14 +78,16 @@ def new_story_multiplayer(
     session: Session = Depends(get_session),
     user=Depends(get_user_from_request),
 ):
-    return new_story(session, user, True)
+    return new_story(session, user, False)
 
 
 def new_story(session: Session, user: User, single_player: bool) -> Story:
     story = Story(original_author=user, single_player_mode=single_player)
     player_ordering_ = [
-        PlayerOrder(order=0, user=user),
-        PlayerOrder(order=1, user=crud.get_ai_player_user(session)),
+        PlayerOrder(order=0, user=user, invitation_accepted=True),
+        PlayerOrder(
+            order=1, user=crud.get_ai_player_user(session), invitation_accepted=True
+        ),
     ]
     story.player_ordering.extend(player_ordering_)
     session.add(story)
@@ -101,12 +96,28 @@ def new_story(session: Session, user: User, single_player: bool) -> Story:
     return story
 
 
-@story_router.get("/{story_id}", response_model=StoryRead)
-def get_story(
+@story_router.get("/{story_id}/singlePlayer", response_model=StoryRead)
+def get_story_single_player(
     *,
     story_id: str,
     session: Session = Depends(get_session),
 ):
+    return get_story(story_id, session)
+
+
+@story_router.get("/{story_id}/multiPlayer", response_model=StoryRead)
+def get_story_multiplayer(
+    *,
+    story_id: str,
+    user=Depends(get_user_from_request),
+    session: Session = Depends(get_session),
+):
+    story = get_story(story_id, session)
+    crud.convert_story_to_multiplayer_if_needed(story, user, session)
+    return story
+
+
+def get_story(story_id: str, session: Session):
     if story := crud.get_story(story_id, session):
         return story
 
@@ -158,6 +169,9 @@ def append_to_story(
     background_tasks: BackgroundTasks,
 ):
     story = crud.get_story(story_id, session)
+
+    crud.convert_story_to_multiplayer_if_needed(story, author, session)
+
     if not story:
         raise HTTPException(404)
 
@@ -165,12 +179,13 @@ def append_to_story(
         raise HTTPException(403, detail="AI player does not use this route")
 
     if author != story.whose_turn_is_it:
-        raise HTTPException(405, detail="not player turn")
+        raise HTTPException(403, detail="not player turn")
 
     segment = StorySegment(
         author=author,
         content=content.rstrip(),
         ai_generated=False,
+        order=len(story.segments),
     )
     story.segments.append(segment)
 
@@ -202,3 +217,7 @@ def get_user_stories(
 
 
 app.include_router(user, prefix="/user", tags=["user"])
+
+from .routers.invitations import invitations
+
+app.include_router(invitations, prefix="/invitations", tags=["invitations"])

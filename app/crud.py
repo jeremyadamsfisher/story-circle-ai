@@ -1,8 +1,11 @@
+import logging
 from typing import Optional
 
 from sqlmodel import Session, select
 
 from .models import Story, User, UserStoriesRead
+
+logger = logging.getLogger(__name__)
 
 SINGLE_PLAYER_NAME = "single-player"
 AI_PLAYER_NAME = "ai-player"
@@ -82,3 +85,18 @@ def get_story(story_uuid: str, session: Session) -> Optional[Story]:
     except ValueError:
         raise DbNotFound
     return story
+
+
+def convert_story_to_multiplayer_if_needed(story: Story, user: User, session: Session):
+    """idempotently convert story to the current user, if logged in"""
+
+    if user.single_player is False and story.single_player_mode is True:
+        single_player = get_single_player_user(session)
+        story.single_player_mode = False
+        story.original_author_id = user.id
+        story.player_ordering[0].user_id = user.id
+        for segment in story.segments:
+            if segment.author.id == single_player.id:
+                segment.author_id = user.id
+        session.add(story)
+        session.commit()
