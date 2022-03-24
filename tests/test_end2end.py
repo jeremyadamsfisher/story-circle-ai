@@ -4,8 +4,8 @@ from email.mime.multipart import MIMEMultipart
 
 import pytest
 
-from app import crud
-from app.lib.email import email_client
+from backend import crud
+from backend.lib.email import email_client
 
 EXAMPLE_USER_EMAILS = [f"player{i}@foo.com" for i in range(1, 4)]
 P1, P2, P3 = EXAMPLE_USER_EMAILS
