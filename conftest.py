@@ -5,6 +5,10 @@ import pytest
 from fastapi.testclient import TestClient
 
 os.environ["APP_ENV"] = "TESTING"
+for env_var in ["MAIL_USERNAME", "MAIL_PASSWORD", "MAIL_SERVER"]:
+    os.environ[env_var] = "example"
+os.environ["MAIL_FROM"] = "foo@bar.com"
+os.environ["MAIL_PORT"] = "42"
 
 from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
