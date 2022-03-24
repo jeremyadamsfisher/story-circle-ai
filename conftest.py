@@ -21,6 +21,13 @@ SQLALCHEMY_DATABASE_URL = "sqlite://"
 EXAMPLE_USER_EMAILS = [f"player{i}@foo.com" for i in range(1, 3)]
 
 
+def pytest_configure(config):
+    plugin = config.pluginmanager.getplugin("mypy")
+    plugin.mypy_argv.extend(
+        ["--no-strict-optional", "--warn-unused-ignores", "--ignore-missing-imports"]
+    )
+
+
 class NeedToSetAUser(Exception):
     ...
 

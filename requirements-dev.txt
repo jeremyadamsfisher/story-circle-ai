@@ -1,3 +1,4 @@
 alembic
 scrapy
 pytest
+pytest-mypy

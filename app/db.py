@@ -1,5 +1,4 @@
 from google.cloud.sql.connector import connector
-from sqlalchemy import create_engine
 from sqlmodel import Session, create_engine
 
 

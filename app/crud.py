@@ -49,7 +49,7 @@ def get_user_by_name(
         (user,) = session.exec(statement)
     except ValueError:
         if not create_if_not_present:
-            return
+            return None
         user = User(name=name)
         session.add(user)
         session.commit()
