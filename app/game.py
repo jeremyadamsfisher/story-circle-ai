@@ -6,7 +6,7 @@ from sqlmodel import Session
 from transformers import pipeline
 
 from . import crud
-from .db import engine
+from .db import get_engine
 from .models import Story, StorySegment
 
 logger = logging.getLogger(__name__)
@@ -15,7 +15,8 @@ N_FAILURES_ALLOWED = 10
 MAX_PROMPT_LENGTH = 50
 WORDS_THAT_CAN_HAVE_A_PERIOD = ["mr" "ms" "mrs" "jr" "sr"]
 
-text_generator = pipeline("text-generation", "pranavpsv/gpt2-genre-story-generator")
+# text_generator = pipeline("text-generation", "pranavpsv/gpt2-genre-story-generator")
+text_generator = lambda s: (s,)
 
 
 class InferenceProblem(Exception):
@@ -42,7 +43,6 @@ def next_segment_prediction(prompt: str) -> str:
     except (ValueError, AttributeError):
         raise InferenceProblemNotASentence(f"invalid sentence: {text_gen}")
     if len(text_gen) == 0:
-        breakpoint()
         raise InferenceProblemEmptyPrediction(
             f"unable to generate from prompt: {prompt_full}\n"
             f"generated text: {text_gen_raw}"
@@ -51,6 +51,7 @@ def next_segment_prediction(prompt: str) -> str:
 
 
 def perform_ai_turn(story_id):
+    engine = get_engine()
     with Session(engine) as session:
         try:
             story = crud.get_story(story_id, session)
@@ -69,6 +70,7 @@ def perform_ai_turn(story_id):
                     story=story,
                     content=next_segment_content,
                     ai_generated=True,
+                    order=len(story.segments),
                 )
                 story.segments.append(segment)
                 session.add(story)

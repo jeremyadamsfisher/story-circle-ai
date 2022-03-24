@@ -27,7 +27,7 @@ TO "story-circle-app-sa@story-circle-ai.iam";
 }
 ```
 - Add those scopes to the API permission list
-- Create a dot file for the backend, filling in information from Terraform and Auth0
+- Create a dot file for the backend, filling in information from Terraform, Auth0, your DNS provider and your mail server
 ```
 PGCONNSTR="qux"
 PGUSER="quuux@vantai-analysis.iam"
@@ -37,4 +37,13 @@ DOMAIN="foo.us.auth0.com"
 API_AUDIENCE="http://baz.com"
 ISSUER="https://graply.us.auth0.com/"
 ALGORITHMS="RS256"
+
+# ripped from https://github.com/sabuhish/fastapi-mail
+MAIL_USERNAME="YourUsername"
+MAIL_PASSWORD="strong_password"
+MAIL_FROM="your@email.com"
+MAIL_PORT="587"
+MAIL_SERVER="your mail server"
+
+APP_ORIGIN="http://awesomewebsite.com"
 ```

@@ -1,35 +1,27 @@
 import os
 
-from loguru import logger
 import jwt
-from fastapi import Depends
-from sqlmodel import Session
-from fastapi import HTTPException
+from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer
 from fastapi.security.http import HTTPAuthorizationCredentials
+from loguru import logger
+from sqlmodel import Session
 
 from . import crud
 from .db import get_session
 
-CONFIG = {
-    "DOMAIN": os.environ["DOMAIN"],
-    "API_AUDIENCE": os.environ["API_AUDIENCE"],
-    "ISSUER": os.environ["ISSUER"],
-    "ALGORITHMS": os.environ["ALGORITHMS"],
-}
-
-
-JWKS_CLIENT = jwt.PyJWKClient(f'https://{CONFIG["DOMAIN"]}/.well-known/jwks.json')
-
 
 def verify_token(token):
-    signing_key = JWKS_CLIENT.get_signing_key_from_jwt(token).key
+    jwks_client = jwt.PyJWKClient(
+        f'https://{os.environ["DOMAIN"]}/.well-known/jwks.json'
+    )
+    signing_key = jwks_client.get_signing_key_from_jwt(token).key
     return jwt.decode(
         token,
         signing_key,
-        algorithms=CONFIG["ALGORITHMS"],
-        audience=CONFIG["API_AUDIENCE"],
-        issuer=CONFIG["ISSUER"],
+        algorithms=os.environ["ALGORITHMS"],
+        audience=os.environ["API_AUDIENCE"],
+        issuer=os.environ["ISSUER"],
     )
 
 

@@ -1,8 +1,9 @@
+from datetime import datetime
 from typing import List, Optional
 from uuid import uuid4
 
 from sqlalchemy_utils import UUIDType
-from sqlmodel import Field, Relationship, SQLModel
+from sqlmodel import DateTime, Field, Relationship, SQLModel
 
 
 class User(SQLModel, table=True):
@@ -15,6 +16,9 @@ class User(SQLModel, table=True):
     player_ordering: List["PlayerOrder"] = Relationship(back_populates="user")
     single_player: bool = False
     ai_player: bool = False
+
+    def __repr__(self) -> str:
+        return f"<User: {self.name}>"
 
 
 class Story(SQLModel, table=True):
@@ -42,6 +46,8 @@ class Story(SQLModel, table=True):
 class StorySegment(SQLModel, table=True):
     __tablename__ = "story_segments"
     id: Optional[int] = Field(default=None, primary_key=True)
+    # created_at: DateTime = Field(default=datetime.now)
+    order: int
     content: str
     author_id: Optional[int] = Field(default=None, foreign_key="users.id")
     author: Optional[User] = Relationship(back_populates="story_segments")
@@ -58,6 +64,7 @@ class PlayerOrder(SQLModel, table=True):
     story: Optional[Story] = Relationship(back_populates="player_ordering")
     user_id: Optional[int] = Field(default=None, foreign_key="users.id")
     user: Optional[User] = Relationship(back_populates="player_ordering")
+    invitation_accepted: bool
 
 
 class UserRead(SQLModel):
@@ -79,6 +86,10 @@ class StoryRead(SQLModel):
     segments: List[StorySegmentRead]
     players: List[UserReadWithPlayerType]
     whose_turn_is_it: UserReadWithPlayerType
+
+
+class StorySegmentNew(SQLModel):
+    content: str
 
 
 class StoryNew(SQLModel):
