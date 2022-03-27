@@ -23,10 +23,22 @@ const Canvas = () => {
     useQuery<Story, Error>(
       story_uuid,
       async () => {
-        const { data } = await axios.get(
-          `${config.baseUrl}/story/${story_uuid}`
-        );
-        return data;
+        if (auth0.isAuthenticated) {
+          const token = await auth0.getAccessTokenSilently({
+            audience: auth0config.audience,
+          });
+          const { data } = await axios({
+            url: `${config.baseUrl}/story/${story_uuid}/multiPlayer`,
+            method: "get",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          return data;
+        } else {
+          const { data } = await axios.get(
+            `${config.baseUrl}/story/${story_uuid}/singlePlayer`
+          );
+          return data;
+        }
       },
       { refetchInterval: 1000 }
     );
@@ -43,19 +55,18 @@ const Canvas = () => {
         const token = await auth0.getAccessTokenSilently({
           audience: auth0config.audience,
         });
-        axios({
-          url: `${
-            config.baseUrl
-          }/story/${story_uuid}/multiPlayer?content=${encodeURI(segment)}`,
-          method: "put",
+        await axios({
+          url: `${config.baseUrl}/story/${story_uuid}/multiPlayer`,
+          method: "post",
           headers: { Authorization: `Bearer ${token}` },
+          data: { content: segment },
         });
       } else {
-        axios.put(
-          `${
-            config.baseUrl
-          }/story/${story_uuid}/singlePlayer?content=${encodeURI(segment)}`
-        );
+        await axios({
+          url: `${config.baseUrl}/story/${story_uuid}/singlePlayer`,
+          method: "post",
+          data: { content: segment },
+        });
       }
     }
   );
@@ -76,7 +87,7 @@ const Canvas = () => {
 
   const isCurrentUserTurn =
     data!.whose_turn_is_it.single_player ||
-    data!.whose_turn_is_it.name === auth0.user!.email;
+    data!.whose_turn_is_it.name === auth0.user?.email;
 
   // reshape segments such that segments with multiple lines are rendered
   // as <br/>'s

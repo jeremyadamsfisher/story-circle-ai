@@ -15,8 +15,7 @@ N_FAILURES_ALLOWED = 10
 MAX_PROMPT_LENGTH = 50
 WORDS_THAT_CAN_HAVE_A_PERIOD = ["mr" "ms" "mrs" "jr" "sr"]
 
-# text_generator = pipeline("text-generation", "pranavpsv/gpt2-genre-story-generator")
-text_generator = lambda s: (s,)
+text_generator = pipeline("text-generation", "pranavpsv/gpt2-genre-story-generator")
 
 
 class InferenceProblem(Exception):
@@ -55,6 +54,8 @@ def perform_ai_turn(story_id):
     with Session(engine) as session:
         try:
             story = crud.get_story(story_id, session)
+            if story is None:
+                raise crud.DbNotFound
         except crud.DbNotFound:
             raise crud.DbIssue(f"could not find {story_id}")
         prompt = " ".join([s.content for s in story.segments])

@@ -122,10 +122,10 @@ def append_to_story(
 ):
     story = crud.get_story(story_id, session)
 
-    crud.convert_story_to_multiplayer_if_needed(story, author, session)
-
     if not story:
         raise HTTPException(404)
+
+    crud.convert_story_to_multiplayer_if_needed(story, author, session)
 
     if author.ai_player:
         raise HTTPException(403, detail="AI player does not use this route")
