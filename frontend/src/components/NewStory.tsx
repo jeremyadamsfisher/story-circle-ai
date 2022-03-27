@@ -23,13 +23,13 @@ const NewStory = () => {
         audience: auth0config.audience,
       });
       const { data }: { data: NewStoryModel } = await axios({
-        method: "put",
+        method: "post",
         url: `${config.baseUrl}/story/multiPlayer`,
         headers: { Authorization: `Bearer ${token}` },
       });
       setNewStory(data);
     } else {
-      const { data }: { data: NewStoryModel } = await axios.put(
+      const { data }: { data: NewStoryModel } = await axios.post(
         `${config.baseUrl}/story/singlePlayer`
       );
       setNewStory(data);

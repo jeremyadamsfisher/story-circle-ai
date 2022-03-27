@@ -2,3 +2,4 @@ alembic
 scrapy
 pytest
 pytest-mypy
+psycopg2-binary

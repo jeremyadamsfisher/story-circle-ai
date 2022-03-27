@@ -30,7 +30,7 @@ warnings.filterwarnings(
 app = FastAPI(title="Story Circle")
 
 
-if os.environ["APP_ENV"] != "PRODUCTION":
+if os.environ["APP_ENV"] == "DEV":
     origins = [
         "*",
         "http://localhost",
