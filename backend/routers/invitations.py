@@ -59,11 +59,11 @@ async def send_invitation(
     return invitation
 
 
-@router.get("/respond/{invitation_id}", response_model=InvitationRead)
+@router.get("/respond/{invitation_id}")
 def respond_to_invitation(
     *,
     invitation_id: int,
     session: Session = Depends(get_session),
     user=Depends(get_user_from_request),
 ):
-    return crud.respond_to_invitation(invitation_id, user, session)
+    crud.respond_to_invitation(invitation_id, user, session)
