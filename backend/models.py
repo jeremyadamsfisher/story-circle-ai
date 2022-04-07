@@ -27,6 +27,7 @@ class Story(SQLModel, table=True):
     story_uuid: str = Field(default_factory=lambda: str(uuid4()), index=True)
     original_author_id: Optional[int] = Field(default=None, foreign_key="users.id")
     original_author: Optional[User] = Relationship(back_populates="stories_originated")
+    invitations: List["Invitation"] = Relationship(back_populates="story")
     segments: List["StorySegment"] = Relationship(back_populates="story")
     player_ordering: List["PlayerOrder"] = Relationship(back_populates="story")
     single_player_mode: bool
@@ -64,7 +65,24 @@ class PlayerOrder(SQLModel, table=True):
     story: Optional[Story] = Relationship(back_populates="player_ordering")
     user_id: Optional[int] = Field(default=None, foreign_key="users.id")
     user: Optional[User] = Relationship(back_populates="player_ordering")
-    invitation_accepted: bool
+
+
+class Invitation(SQLModel, table=True):
+    __tablename__ = "invitations"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    invitee_email: str
+    responded: bool
+    story_id: Optional[int] = Field(default=None, foreign_key="stories.id")
+    story: Optional[Story] = Relationship(back_populates="invitations")
+
+
+class InvitationNew(SQLModel):
+    story_uuid: str
+    invitee_email: str
+
+
+class InvitationRead(SQLModel):
+    id: int
 
 
 class UserRead(SQLModel):

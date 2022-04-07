@@ -3,7 +3,7 @@ from typing import Optional
 
 from sqlmodel import Session, select
 
-from .models import Story, User, UserStoriesRead
+from .models import Invitation, InvitationNew, PlayerOrder, Story, User, UserStoriesRead
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +78,7 @@ def get_stories_originated_by_user(user_id: int, session: Session):
     return u
 
 
-def get_story(story_uuid: str, session: Session) -> Optional[Story]:
+def get_story(story_uuid: str, session: Session) -> Story:
     statement = select(Story).where(Story.story_uuid == story_uuid)
     try:
         (story,) = session.exec(statement)
@@ -100,3 +100,31 @@ def convert_story_to_multiplayer_if_needed(story: Story, user: User, session: Se
                 segment.author_id = user.id
         session.add(story)
         session.commit()
+
+
+def add_invitation(invitation: InvitationNew, session: Session) -> Invitation:
+    """create an invitation that can be redeemed by anyone with the link
+    in the email"""
+    story = get_story(story_uuid=invitation.story_uuid, session=session)
+    i = Invitation(
+        invitee_email=invitation.invitee_email,
+        story=story,
+        responded=False,
+    )
+    session.add(i)
+    session.commit()
+    session.refresh(i)
+    return i
+
+
+def respond_to_invitation(invitation_id: int, user: User, session: Session):
+    """redeem the invitation so that the logged in user will be allowed
+    to add to the story"""
+    invitation = session.get(Invitation, invitation_id)
+    if invitation is None:
+        raise DbNotFound
+    invitation.responded = True
+    n_players = len(invitation.story.players) + 1
+    invitation.story.player_ordering.append(PlayerOrder(user=user, order=n_players))
+    session.add(invitation)
+    session.commit()

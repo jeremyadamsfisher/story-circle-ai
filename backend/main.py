@@ -1,6 +1,6 @@
+import logging
 import os
 import warnings
-import logging
 from pathlib import Path
 
 logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.INFO)
@@ -17,10 +17,9 @@ else:
     logger.warning(".env file does not exists, falling down to environment variables")
 
 
+from .routers.invitations import router as invitations_router
 from .routers.story import router as story_router
 from .routers.users import router as user_router
-from .routers.invitations import router as invitations_router
-
 
 warnings.filterwarnings(
     "ignore", ".*Class SelectOfScalar will not make use of SQL compilation caching.*"
