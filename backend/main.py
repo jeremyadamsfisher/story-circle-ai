@@ -29,7 +29,14 @@ warnings.filterwarnings(
 app = FastAPI(title="Story Circle")
 
 
-if os.environ["APP_ENV"] == "DEV":
+app_env = os.environ["APP_ENV"]
+
+
+logger.info(f"booting into {app_env} mode")
+
+
+if app_env == "DEV":
+    logger.info("allowing CORS from anywhere")
     origins = [
         "*",
         "http://localhost",

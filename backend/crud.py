@@ -128,3 +128,5 @@ def respond_to_invitation(invitation_id: int, user: User, session: Session):
     invitation.story.player_ordering.append(PlayerOrder(user=user, order=n_players))
     session.add(invitation)
     session.commit()
+
+    return invitation

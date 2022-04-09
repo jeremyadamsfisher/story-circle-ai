@@ -56,6 +56,7 @@ def session_fixture():
 def client_context(session: Session, monkeypatch):
     os.environ["APP_ORIGIN"] = "http://localhost"
 
+    os.environ["SUPPRESS_EMAIL"] = "1"
     email_client.config.SUPPRESS_SEND = 1
 
     def test_perform_ai_turn(story_uuid):

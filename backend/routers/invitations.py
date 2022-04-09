@@ -4,7 +4,6 @@ from urllib.parse import urljoin
 
 from fastapi import BackgroundTasks, Depends, HTTPException
 from fastapi_mail import MessageSchema
-from pydantic import BaseModel
 from sqlmodel import Session
 
 from .. import crud
@@ -12,7 +11,7 @@ from ..auth import get_user_from_request
 from ..db import get_session
 from ..lib.email import email_client
 from ..lib.shims import APIRouter
-from ..models import InvitationNew, InvitationRead
+from ..models import Invitation, InvitationNew, InvitationRead
 
 router = APIRouter()
 
@@ -60,11 +59,13 @@ async def send_invitation(
     return invitation
 
 
-@router.get("/respond/{invitation_id}")
+@router.get("/respond/{invitation_id}", response_model=InvitationRead)
 def respond_to_invitation(
     *,
     invitation_id: int,
     session: Session = Depends(get_session),
     user=Depends(get_user_from_request),
 ):
-    crud.respond_to_invitation(invitation_id, user, session)
+    invitation = session.get(Invitation, invitation_id)
+    crud.respond_to_invitation(invitation, user, session)
+    return invitation

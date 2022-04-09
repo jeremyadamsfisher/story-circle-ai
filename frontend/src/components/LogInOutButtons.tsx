@@ -12,13 +12,12 @@ const LogInButton: React.FC<ButtonProps> = (props) => {
       </Button>
     );
   }
+  return <LogInButtonSimple variant="ghost" onClick={() => loginWithRedirect()} />;
+};
+
+const LogInButtonSimple: React.FC<ButtonProps> = (props) => {
   return (
-    <Button
-      onClick={() => loginWithRedirect()}
-      variant="ghost"
-      leftIcon={<FaUserCircle />}
-      {...props}
-    >
+    <Button leftIcon={<FaUserCircle />} {...props}>
       log in
     </Button>
   );
@@ -33,4 +32,4 @@ const LogOutButton: React.FC<ButtonProps> = (props) => {
   );
 };
 
-export { LogInButton, LogOutButton };
+export { LogInButton, LogOutButton, LogInButtonSimple };
