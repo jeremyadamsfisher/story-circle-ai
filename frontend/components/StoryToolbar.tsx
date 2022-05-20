@@ -41,12 +41,7 @@ export default () => {
       >
         Add to story
       </ToolkitButton>
-      <ToolkitButton
-        variant={"solid"}
-        colorScheme={"teal"}
-        mr={4}
-        // leftIcon={<AddIcon />}
-      >
+      <ToolkitButton variant={"solid"} mr={4}>
         <NextLink href={"/"}>
           <a>New story</a>
         </NextLink>

@@ -12,7 +12,7 @@ export const LogInButton: React.FC<ButtonProps> = (props) => {
       {...props}
       onClick={() =>
         loginWithRedirect({
-          returnTo: "/auth0redirect",
+          returnTo: "/story",
           appState: { id: storyUuid },
         })
       }

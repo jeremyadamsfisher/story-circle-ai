@@ -46,7 +46,7 @@ export default function Navbar() {
             <Button variant={"ghost"} onClick={toggleColorMode}>
               {colorMode === "light" ? <MoonIcon /> : <SunIcon />}
             </Button>
-            {auth0Error && (
+            {!isLoading && auth0Error && (
               <Alert borderRadius={5} status="error">
                 <AlertIcon />
                 <AlertTitle>Error</AlertTitle>
