@@ -43,7 +43,11 @@ def get_story(story_uuid: str, user: User, session: Session):
     try:
         story = crud.get_story(story_uuid, session)
     except crud.DbNotFound:
-        story = Story(story_uuid=story_uuid, original_author=user, single_player_mode=user.single_player)
+        story = Story(
+            story_uuid=story_uuid,
+            original_author=user,
+            single_player_mode=user.single_player,
+        )
         player_ordering_ = [
             PlayerOrder(order=0, user=user, invitation_accepted=True),
             PlayerOrder(
