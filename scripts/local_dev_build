@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+set -euxo pipefail
+
+(IN_MEMORY_DB=1 uvicorn backend.main:app --reload) &
+cd frontend && yarn && yarn run next
