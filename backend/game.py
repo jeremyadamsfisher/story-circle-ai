@@ -22,7 +22,6 @@ if os.environ["APP_ENV"] == "TESTING":
         EXAMPLE = "So we beat on, boats against the current, borne back ceaselessly into the past."
         return [{"generated_text": prompt + EXAMPLE}]
 
-
 else:
     text_generator = pipeline("text-generation", "pranavpsv/gpt2-genre-story-generator")
 
