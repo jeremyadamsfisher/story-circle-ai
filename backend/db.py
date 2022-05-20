@@ -3,6 +3,7 @@ import os
 from google.cloud.sql.connector import connector
 from sqlmodel import Session, create_engine
 
+
 if os.environ.get("IN_MEMORY_DB") == "1":
     from sqlmodel import SQLModel
     from sqlmodel.pool import StaticPool
