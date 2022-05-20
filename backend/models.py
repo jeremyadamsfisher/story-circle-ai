@@ -24,7 +24,7 @@ class User(SQLModel, table=True):
 class Story(SQLModel, table=True):
     __tablename__ = "stories"
     id: Optional[int] = Field(default=None, primary_key=True)
-    story_uuid: str = Field(default_factory=lambda: str(uuid4()), index=True)
+    story_uuid: str = Field(index=True)
     original_author_id: Optional[int] = Field(default=None, foreign_key="users.id")
     original_author: Optional[User] = Relationship(back_populates="stories_originated")
     invitations: List["Invitation"] = Relationship(back_populates="story")
