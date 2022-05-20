@@ -1,4 +1,5 @@
 import logging
+import os
 import re
 import string
 
@@ -7,7 +8,7 @@ from transformers import pipeline
 
 from . import crud
 from .db import get_engine
-from .models import Story, StorySegment
+from .models import StorySegment
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +16,15 @@ N_FAILURES_ALLOWED = 10
 MAX_PROMPT_LENGTH = 50
 WORDS_THAT_CAN_HAVE_A_PERIOD = ["mr" "ms" "mrs" "jr" "sr"]
 
-text_generator = pipeline("text-generation", "pranavpsv/gpt2-genre-story-generator")
+if os.environ["APP_ENV"] == "TESTING":
+
+    def text_generator(prompt):
+        EXAMPLE = "So we beat on, boats against the current, borne back ceaselessly into the past."
+        return [{"generated_text": prompt + EXAMPLE}]
+
+
+else:
+    text_generator = pipeline("text-generation", "pranavpsv/gpt2-genre-story-generator")
 
 
 class InferenceProblem(Exception):
