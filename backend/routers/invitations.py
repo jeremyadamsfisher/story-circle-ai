@@ -66,6 +66,4 @@ def respond_to_invitation(
     session: Session = Depends(get_session),
     user=Depends(get_user_from_request),
 ):
-    invitation = session.get(Invitation, invitation_id)
-    crud.respond_to_invitation(invitation, user, session)
-    return invitation
+    return crud.respond_to_invitation(invitation_id, user, session)
