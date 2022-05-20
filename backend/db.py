@@ -4,9 +4,13 @@ from google.cloud.sql.connector import connector
 from sqlmodel import Session, create_engine
 
 if os.environ.get("IN_MEMORY_DB") == "1":
+    from sqlmodel import SQLModel
+    from sqlmodel.pool import StaticPool
+
     engine = create_engine(
         "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
     )
+    SQLModel.metadata.create_all(engine)
 else:
     engine = create_engine(
         "postgresql+pg8000://",

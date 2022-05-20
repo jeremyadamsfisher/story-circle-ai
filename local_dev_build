@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-
-set -euxo pipefail
-
-(cd uvicorn backend.main:app --reload) &
-cd frontend && yarn && yarn start
