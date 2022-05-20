@@ -14,23 +14,16 @@ from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
 
 from backend import crud
-from backend.routers import story
 from backend.auth import get_user_from_request
 from backend.db import get_session
 from backend.lib.email import email_client
 from backend.main import app
 from backend.models import *
+from backend.routers import invitations, story
 
 SQLALCHEMY_DATABASE_URL = "sqlite://"
 
 EXAMPLE_USER_EMAILS = [f"player{i}@foo.com" for i in range(1, 3)]
-
-
-def pytest_configure(config):
-    plugin = config.pluginmanager.getplugin("mypy")
-    plugin.mypy_argv.extend(
-        ["--no-strict-optional", "--warn-unused-ignores", "--ignore-missing-imports"]
-    )
 
 
 class NeedToSetAUser(Exception):
@@ -56,6 +49,7 @@ def session_fixture():
 def client_context(session: Session, monkeypatch):
     os.environ["APP_ORIGIN"] = "http://localhost"
 
+    os.environ["SUPPRESS_EMAIL"] = "1"
     email_client.config.SUPPRESS_SEND = 1
 
     def test_perform_ai_turn(story_uuid):

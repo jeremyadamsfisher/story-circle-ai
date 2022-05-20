@@ -1,8 +1,10 @@
 import base64
 import time
 from email.mime.multipart import MIMEMultipart
+from typing import Optional, Tuple
 
 import pytest
+from bs4 import BeautifulSoup
 
 from backend import crud
 from backend.lib.email import email_client
@@ -38,15 +40,30 @@ def get_story_status(client, story_uuid, story_mode, expected_status_code=200):
     return r.json()
 
 
-def send_invite(client, story_uuid, email_address, expected_status_code=200):
-    r = client.post(
-        f"/invitations",
-        json={"story_uuid": story_uuid, "other_player_email": email_address},
-    )
-    assert r.status_code == expected_status_code
+def send_invite(
+    client, story_uuid, email_address, expected_status_code=200
+) -> Optional[Tuple[MIMEMultipart, int]]:
+    """send an invitation, used with the `simple_email_payload` fixture
+
+    Returns:
+        str: url of the invitation response
+    """
+    with email_client.record_messages() as outbox:
+        r = client.post(
+            f"/invitations/send",
+            json={"story_uuid": story_uuid, "invitee_email": email_address},
+        )
+        assert r.status_code == expected_status_code
+        if r.status_code != 200:
+            return
+        invitation_id = r.json()["id"]
+        email = outbox[0]
+        return email, invitation_id
 
 
-### utilities ###
+def respond_to_invite(client, invitation_id):
+    r = client.get(f"/invitations/respond/{invitation_id}")
+    assert r.status_code == 200
 
 
 def decode_email_payload(email: MIMEMultipart) -> str:
@@ -55,6 +72,15 @@ def decode_email_payload(email: MIMEMultipart) -> str:
         part = base64.b64decode(part.get_payload()).decode()
         parts.append(part)
     return "".join(parts)
+
+
+def extract_invite_url_from_email_payload(email_payload: str) -> str:
+    soup = BeautifulSoup(email_payload, "html.parser")
+    url = soup.find(id="email-link")["href"]
+    return url
+
+
+### utilities ###
 
 
 def test_health_check(client):
@@ -100,21 +126,20 @@ def test_single_player_can_add_to_story(client):
     assert segments == [s1, "foo", s2, "foo"]
 
 
-def test_invitation_contains_story_uuid_in_email(client_context):
+def test_invitation_contains_invitation_id(client_context):
     """
-    User creates a story and invites another player. That player
-    checks their inbox.
+    User creates a story and invites another player. Ensure email
+    contains relevant information
     """
     client, _, active_user = client_context
 
-    with active_user(P1), email_client.record_messages() as outbox:
+    with active_user(P1):
         story_uuid = create_story(client, "multi")
-        send_invite(client, story_uuid, email_address=P2)
-        assert len(outbox) == 1
-        invite = outbox[0]
-        assert invite["to"] == P2
-        msg = decode_email_payload(invite)
-        assert story_uuid in msg
+        email, invitation_id = send_invite(client, story_uuid, email_address=P2)
+        payload = decode_email_payload(email)
+        invitation_url = extract_invite_url_from_email_payload(payload)
+        assert email["to"] == P2
+        assert str(invitation_id) == invitation_url[-len(str(invitation_id)) :]
 
 
 def test_invited_player_can_add_to_story(client_context):
@@ -127,9 +152,10 @@ def test_invited_player_can_add_to_story(client_context):
     with active_user(P1):
         story_uuid = create_story(client, "multi")
         add_to_story(client, story_uuid, "foo", "multi")
-        send_invite(client, story_uuid, email_address=P2)
+        _, invite_id = send_invite(client, story_uuid, email_address=P2)
 
     with active_user(P2):
+        respond_to_invite(client, invite_id)
         add_to_story(client, story_uuid, "bar", "multi")
 
     story = crud.get_story(story_uuid, session)
@@ -147,11 +173,14 @@ def test_user_cannot_interfere_when_its_not_their_turn(client_context):
     with active_user(P1):
         story_uuid = create_story(client, "multi")
         add_to_story(client, story_uuid, "foo", "multi")
-        send_invite(client, story_uuid, email_address=P2)
+        _, invite_id = send_invite(client, story_uuid, email_address=P2)
 
+    with active_user(P2):
+        respond_to_invite(client, invite_id)
+
+    with active_user(P1):
         # Here, the user tries to add to the story again __before__ the new player
         # has a chance to add anything
-
         add_to_story(client, story_uuid, "foo", "multi", expected_status_code=403)
 
 
@@ -177,11 +206,12 @@ def test_can_only_add_after_invited(client_context):
 
     with active_user(P1):
         add_to_story(client, story_uuid, "foo", "multi")
-        send_invite(client, story_uuid, email_address=P2)
+        _, invite_id = send_invite(client, story_uuid, email_address=P2)
 
     # Now player 2 can take their turn legally
 
     with active_user(P2):
+        respond_to_invite(client, invite_id)
         add_to_story(client, story_uuid, "foo", "multi", expected_status_code=200)
 
 

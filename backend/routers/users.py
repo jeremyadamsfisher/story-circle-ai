@@ -7,7 +7,6 @@ from ..db import get_session
 from ..lib.shims import APIRouter
 from ..models import UserStoriesRead
 
-
 router = APIRouter()
 
 

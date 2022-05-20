@@ -14,4 +14,8 @@ conf = ConnectionConfig(
     VALIDATE_CERTS=True,
 )
 
+
 email_client = FastMail(conf)
+
+if os.environ.get("SUPPRESS_EMAIL", False):
+    email_client.config.SUPPRESS_SEND = 1

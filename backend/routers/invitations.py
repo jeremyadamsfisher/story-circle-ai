@@ -4,7 +4,6 @@ from urllib.parse import urljoin
 
 from fastapi import BackgroundTasks, Depends, HTTPException
 from fastapi_mail import MessageSchema
-from pydantic import BaseModel
 from sqlmodel import Session
 
 from .. import crud
@@ -12,52 +11,59 @@ from ..auth import get_user_from_request
 from ..db import get_session
 from ..lib.email import email_client
 from ..lib.shims import APIRouter
-from ..models import PlayerOrder
+from ..models import Invitation, InvitationNew, InvitationRead
 
 router = APIRouter()
 
+INVITE_SUBJECT = "You've been invited to contribute to an AI story!"
 INVITE_HTML = """
-<p>You've been invited to work on a story with AI agents!</p>
-<p>Check it out: {}</p>
+<html>
+    <body>
+        <p>You've been invited to work on a story with AI agents!</p>
+        <a id="email-link" href="{}">Click here!</a>
+    <body>
+</html>
 """
 
 
-class Invitation(BaseModel):
-    story_uuid: str
-    other_player_email: str
-
-
-@router.post("/")
-async def invite_user(
+@router.post("/send", response_model=InvitationRead)
+async def send_invitation(
     *,
     session: Session = Depends(get_session),
     user=Depends(get_user_from_request),
     background_tasks: BackgroundTasks,
-    invitation: Invitation
+    invitation_: InvitationNew,
 ):
     if not any(
-        story.story_uuid == invitation.story_uuid for story in user.stories_originated
+        story.story_uuid == invitation_.story_uuid for story in user.stories_originated
     ):
         raise HTTPException(
             403, "can only invite other users to stories user originated"
         )
 
-    story = crud.get_story(story_uuid=invitation.story_uuid, session=session)
-    other_player = crud.get_user_by_name(invitation.other_player_email, session=session)
-    player_order = PlayerOrder(
-        order=len(story.player_ordering) + 1,
-        user=other_player,
-        story=story,
-        invitation_accepted=False,
-    )
-    session.add(player_order)
+    invitation = crud.add_invitation(invitation_, session)
 
-    story_url = reduce(urljoin, [os.environ["APP_ORIGIN"], "/s", invitation.story_uuid])
+    story_url = reduce(
+        urljoin,
+        [os.environ["APP_ORIGIN"], "/invitations/respond", str(invitation.id)],
+    )
 
     msg = MessageSchema(
-        subject="You've been invited to contribute to an AI story!",
-        recipients=[invitation.other_player_email],
+        subject=INVITE_SUBJECT,
+        recipients=[invitation.invitee_email],
         body=INVITE_HTML.format(story_url),
     )
 
     background_tasks.add_task(email_client.send_message, msg)
+
+    return invitation
+
+
+@router.get("/respond/{invitation_id}", response_model=InvitationRead)
+def respond_to_invitation(
+    *,
+    invitation_id: int,
+    session: Session = Depends(get_session),
+    user=Depends(get_user_from_request),
+):
+    return crud.respond_to_invitation(invitation_id, user, session)
