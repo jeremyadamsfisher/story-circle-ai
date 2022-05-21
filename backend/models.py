@@ -84,6 +84,7 @@ class InvitationNew(SQLModel):
 class InvitationRead(SQLModel):
     id: int
     story_id: str
+    story: Story
 
 
 class UserRead(SQLModel):

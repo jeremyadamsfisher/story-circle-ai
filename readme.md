@@ -39,10 +39,11 @@ ISSUER="https://graply.us.auth0.com/"
 ALGORITHMS="RS256"
 
 # ripped from https://github.com/sabuhish/fastapi-mail
+MAIL_USERNAME="your@email.com"
 MAIL_PASSWORD="strong_password"
 MAIL_FROM="your@email.com"
 MAIL_PORT="587"
 MAIL_SERVER="mail.privateemail.com"
 
-APP_ORIGIN="http://awesomewebsite.com"
+FRONTEND_URL="http://awesomewebsite.com"
 ```

@@ -3,7 +3,8 @@ from typing import Optional
 
 from sqlmodel import Session, select
 
-from .models import Invitation, InvitationNew, PlayerOrder, Story, User, UserStoriesRead
+from .models import (Invitation, InvitationNew, PlayerOrder, Story, User,
+                     UserStoriesRead)
 
 logger = logging.getLogger(__name__)
 
@@ -117,16 +118,15 @@ def add_invitation(invitation: InvitationNew, session: Session) -> Invitation:
     return i
 
 
-def respond_to_invitation(invitation_id: int, user: User, session: Session):
+def respond_to_invitation(invitation: Invitation, user: User, session: Session):
     """redeem the invitation so that the logged in user will be allowed
     to add to the story"""
-    invitation = session.get(Invitation, invitation_id)
-    if invitation is None:
-        raise DbNotFound
     invitation.responded = True
     n_players = len(invitation.story.players) + 1
     invitation.story.player_ordering.append(PlayerOrder(user=user, order=n_players))
     session.add(invitation)
     session.commit()
+
+    session.refresh(invitation)
 
     return invitation
