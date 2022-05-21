@@ -16,17 +16,14 @@ import {
 } from "@chakra-ui/react";
 import { Formik, Form, Field, FieldInputProps, FormikProps } from "formik";
 import { useSendInvitationCallback } from "../lib/invitation";
+import { useStoryUuid } from "../lib/story";
 
-interface InvitePlayerPopoverProps extends ButtonProps {
-  storyUuid: string;
-}
-
-export const InviteButton: React.FC<InvitePlayerPopoverProps> = ({
-  storyUuid,
+export const InviteButton: React.FC<ButtonProps> = ({
   children,
   ...buttonProps
 }) => {
   const [invitePlayerDialogOpen, setInvitePlayerDialogOpen] = useState(false);
+  const storyUuid = useStoryUuid();
   return (
     <Popover
       isOpen={invitePlayerDialogOpen}
@@ -86,6 +83,7 @@ const InvitePlayerForm: React.FC<{
             isClosable: true,
           });
           actions.setSubmitting(false);
+          dismiss();
           return;
         }
         toast({

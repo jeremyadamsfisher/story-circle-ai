@@ -14,18 +14,24 @@ const backendUrl =
     : "https://api.faboo.com";
 
 export const useApiClient = () => {
-  // const { isAuthenticated, getAccessTokenSilently } = useAuth0();
+  const { isAuthenticated, getAccessTokenSilently } = useAuth0();
   let apiClient = ky.create({
     prefixUrl: backendUrl,
   });
-  // if (isAuthenticated) {
-  //   const token = getAccessTokenSilently({
-  //     audience: auth0config.audience,
-  //   });
-  //   apiClient = apiClient.extend({
-  //     headers: { Authorization: `Bearer ${token}` },
-  //   });
-  // }
+  if (isAuthenticated) {
+    apiClient = apiClient.extend({
+      hooks: {
+        beforeRequest: [
+          async (request) => {
+            const token = await getAccessTokenSilently({
+              audience: auth0config.audience,
+            });
+            request.headers.set("Authorization", `Bearer ${token}`);
+          },
+        ],
+      },
+    });
+  }
   return apiClient;
 };
 

@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { useAuth0 } from "@auth0/auth0-react";
 import useSWR from "swr";
 import { useApiClient, schemas } from "./access";
 import { useRouter } from "next/router";
@@ -17,7 +18,10 @@ export const useStoryUuid = () => {
 
 export const useStory = () => {
   const storyUuid = useStoryUuid();
-  const key = `story/${storyUuid}/singlePlayer`;
+  const { isAuthenticated } = useAuth0();
+  const key = `story/${storyUuid}/${
+    isAuthenticated ? "multiPlayer" : "singlePlayer"
+  }`;
   const client = useApiClient();
   const { data: story, mutate, error } = useSWR(
     key,

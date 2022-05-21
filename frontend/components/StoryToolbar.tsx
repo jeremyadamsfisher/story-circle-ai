@@ -50,7 +50,7 @@ export default () => {
       {isAuthenticated && (
         <InviteButton {...ToolkitButtonOps}>Invite another player</InviteButton>
       )}
-      <ToolkitButton>How do I play this game</ToolkitButton>
+      {/* <ToolkitButton>How do I play this game</ToolkitButton> */}
     </Stack>
   );
 };

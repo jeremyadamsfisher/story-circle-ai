@@ -4,6 +4,7 @@ from urllib.parse import urljoin
 
 from fastapi import BackgroundTasks, Depends, HTTPException
 from fastapi_mail import MessageSchema
+from loguru import logger
 from sqlmodel import Session
 
 from .. import crud
@@ -11,7 +12,7 @@ from ..auth import get_user_from_request
 from ..db import get_session
 from ..lib.email import email_client
 from ..lib.shims import APIRouter
-from ..models import Invitation, InvitationNew, InvitationRead
+from ..models import InvitationNew, InvitationRead
 
 router = APIRouter()
 
@@ -32,16 +33,16 @@ async def send_invitation(
     session: Session = Depends(get_session),
     user=Depends(get_user_from_request),
     background_tasks: BackgroundTasks,
-    invitation_: InvitationNew,
+    model: InvitationNew,
 ):
     if not any(
-        story.story_uuid == invitation_.story_uuid for story in user.stories_originated
+        story.story_uuid == model.story_uuid for story in user.stories_originated
     ):
         raise HTTPException(
             403, "can only invite other users to stories user originated"
         )
 
-    invitation = crud.add_invitation(invitation_, session)
+    invitation = crud.add_invitation(model, session)
 
     story_url = reduce(
         urljoin,
