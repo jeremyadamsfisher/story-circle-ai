@@ -43,7 +43,10 @@ async def send_invitation(
 
     invitation = crud.add_invitation(model, session)
 
-    story_url = urljoin(os.environ["FRONTEND_URL"], f"/invitation?id={invitation.id}")
+    story_url = urljoin(
+        os.environ.get("FRONTEND_URL", "localhost:3000"),
+        f"/invitation?id={invitation.id}",
+    )
 
     msg = MessageSchema(
         subject=INVITE_SUBJECT,
