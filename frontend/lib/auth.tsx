@@ -8,7 +8,7 @@ export const Auth0ProviderWithRedirects: React.FC<{
   const { publicRuntimeConfig } = getConfig();
   const router = useRouter();
 
-  ["DOMAIN", "CLIENT_ID", "AUDIENCE"].forEach((var_) => {
+  ["DOMAIN", "CLIENT_ID", "AUDIENCE", "FRONTEND_URL", "BACKEND_URL"].forEach((var_) => {
     if (!publicRuntimeConfig[var_]) {
       throw new Error(`missing auth0 config: ${var_}`);
     }
