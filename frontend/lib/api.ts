@@ -7,12 +7,16 @@ export interface paths {
   "/health": {
     get: operations["health_health_get"];
   };
+  "/story/{story_uuid}/singlePlayer": {
+    get: operations["get_story_single_player_story__story_uuid__singlePlayer_get"];
+  };
+  "/story/{story_uuid}/multiPlayer": {
+    get: operations["get_story_multiplayer_story__story_uuid__multiPlayer_get"];
+  };
   "/story/{story_id}/singlePlayer": {
-    get: operations["get_story_single_player_story__story_id__singlePlayer_get"];
     post: operations["append_to_story_single_player_story__story_id__singlePlayer_post"];
   };
   "/story/{story_id}/multiPlayer": {
-    get: operations["get_story_multiplayer_story__story_id__multiPlayer_get"];
     post: operations["append_to_story_multiplayer_story__story_id__multiPlayer_post"];
   };
   "/user": {
@@ -46,6 +50,18 @@ export interface components {
       id: number;
       /** Story Id */
       story_id: string;
+      story: components["schemas"]["Story"];
+    };
+    /** Story */
+    Story: {
+      /** Id */
+      id?: number;
+      /** Story Uuid */
+      story_uuid: string;
+      /** Original Author Id */
+      original_author_id?: number;
+      /** Single Player Mode */
+      single_player_mode: boolean;
     };
     /** StoryRead */
     StoryRead: {
@@ -111,10 +127,31 @@ export interface operations {
       };
     };
   };
-  get_story_single_player_story__story_id__singlePlayer_get: {
+  get_story_single_player_story__story_uuid__singlePlayer_get: {
     parameters: {
       path: {
-        story_id: string;
+        story_uuid: string;
+      };
+    };
+    responses: {
+      /** Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["StoryRead"];
+        };
+      };
+      /** Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  get_story_multiplayer_story__story_uuid__multiPlayer_get: {
+    parameters: {
+      path: {
+        story_uuid: string;
       };
     };
     responses: {
@@ -155,27 +192,6 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": components["schemas"]["StorySegmentNew"];
-      };
-    };
-  };
-  get_story_multiplayer_story__story_id__multiPlayer_get: {
-    parameters: {
-      path: {
-        story_id: string;
-      };
-    };
-    responses: {
-      /** Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["StoryRead"];
-        };
-      };
-      /** Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
       };
     };
   };

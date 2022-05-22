@@ -1,21 +1,35 @@
-import { Button, ButtonProps } from "@chakra-ui/react";
+import { Button, ButtonProps, Spinner } from "@chakra-ui/react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { FaUserCircle } from "react-icons/fa";
-import { useStoryUuid } from "../lib/story";
+import { useRouter } from "next/router";
 
-export const LogInButton: React.FC<ButtonProps> = (props) => {
+interface LoginButtonProps extends ButtonProps {
+  returnTo: string;
+}
+
+export const LogInButton: React.FC<LoginButtonProps> = ({
+  returnTo,
+  ...props
+}) => {
   const { loginWithRedirect } = useAuth0();
-  const storyUuid = useStoryUuid();
+  const { query, isReady } = useRouter();
+
+  if (!isReady) {
+    return <Spinner />;
+  }
+
   return (
     <Button
       leftIcon={<FaUserCircle />}
       {...props}
-      onClick={() =>
+      onClick={() => {
         loginWithRedirect({
-          returnTo: "/story",
-          appState: { id: storyUuid },
-        })
-      }
+          appState: {
+            id: query.id,
+            returnTo: returnTo,
+          },
+        });
+      }}
     >
       Log in
     </Button>

@@ -8,6 +8,7 @@ import {
   AlertDescription,
   HStack,
   Button,
+  Center,
   Menu,
   MenuButton,
   MenuList,
@@ -24,7 +25,11 @@ import { useAuth0 } from "@auth0/auth0-react";
 
 const Logo = () => <Heading size={"md"}>Story Circle</Heading>;
 
-export default function Navbar() {
+interface INavBar {
+  returnTo: string;
+}
+
+const NavBar: React.FC<INavBar> = ({ returnTo }) => {
   const { colorMode, toggleColorMode } = useColorMode();
   const { isLoading, error: auth0Error, isAuthenticated, user } = useAuth0();
   const { logout } = useAuth0();
@@ -64,21 +69,29 @@ export default function Navbar() {
                   cursor={"pointer"}
                   minW={0}
                 >
-                  <Avatar size={"md"} name={"Jeremy Fisher"} />
+                  <Avatar size={"md"} name={user!.name} />
                 </MenuButton>
                 <MenuList>
-                  <MenuItem icon={<BiBookOpen />}>Your stories</MenuItem>
-                  <MenuItem icon={<CgLogOut />} onClick={logout}>
+                  <Center style={{ padding: 10 }}>
+                    <Avatar size={"2xl"} src={user!.profile} />
+                  </Center>
+                  <Center style={{ padding: 10 }}>
+                    <p>{user!.email}</p>
+                  </Center>
+                  {/* <MenuItem icon={<BiBookOpen />}>Your stories</MenuItem> */}
+                  <MenuItem icon={<CgLogOut />} onClick={() => logout()}>
                     Log out
                   </MenuItem>
                 </MenuList>
               </Menu>
             </Flex>
           ) : (
-            <LogInButton />
+            <LogInButton returnTo={returnTo} />
           )}
         </HStack>
       </Flex>
     </Box>
   );
-}
+};
+
+export default NavBar;

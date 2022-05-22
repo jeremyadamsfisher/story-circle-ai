@@ -6,12 +6,12 @@ import { theme } from "../lib/theme";
 import { Auth0ProviderWithRedirects } from "../lib/auth";
 
 export default ({ Component, pageProps }: AppProps) => {
+  //@ts-ignore
+  const getLayout = Component.getLayout || ((page) => page);
   return (
     <Auth0ProviderWithRedirects>
       <ChakraProvider theme={theme}>
-        <Layout>
-          <Component {...pageProps} />
-        </Layout>
+        {getLayout(<Component {...pageProps} />)}
       </ChakraProvider>
     </Auth0ProviderWithRedirects>
   );

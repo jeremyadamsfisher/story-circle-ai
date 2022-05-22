@@ -10,7 +10,6 @@ class User(SQLModel, table=True):
     __tablename__ = "users"
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str
-    # email: Optional[str]
     story_segments: List["StorySegment"] = Relationship(back_populates="author")
     stories_originated: List["Story"] = Relationship(back_populates="original_author")
     player_ordering: List["PlayerOrder"] = Relationship(back_populates="user")

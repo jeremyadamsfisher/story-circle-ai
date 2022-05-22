@@ -19,8 +19,13 @@ export const Auth0ProviderWithRedirects: React.FC<{
       redirectUri={frontendUrl + "/auth0redirect"}
       audience={auth0config.audience}
       onRedirectCallback={(appState?: AppState) => {
-        if (appState?.id) {
-          router.push({ pathname: "story", query: { id: appState?.id } });
+        if (appState) {
+          router.push({
+            pathname: appState.returnTo,
+            query: { id: appState.id },
+          });
+        } else {
+          throw new Error("No app state to restore");
         }
       }}
     >

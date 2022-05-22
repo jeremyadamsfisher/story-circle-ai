@@ -32,6 +32,7 @@ export const useApiClient = () => {
       },
     });
   }
+  apiClient.isAuthenticated = isAuthenticated;
   return apiClient;
 };
 

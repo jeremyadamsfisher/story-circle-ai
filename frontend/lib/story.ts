@@ -36,7 +36,7 @@ export const useStory = () => {
       mutate();
       return promise;
     },
-    [key]
+    [key, isAuthenticated]
   );
   return { key, story, addToStoryCallback, error };
 };

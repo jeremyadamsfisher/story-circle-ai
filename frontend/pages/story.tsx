@@ -1,6 +1,7 @@
 import { useState, useContext, createContext } from "react";
 import StoryToolbar from "../components/StoryToolbar";
 import StoryEditor from "../components/StoryEditor";
+import Layout from "../components/layout";
 
 //@ts-ignore
 const ClientContext = createContext<{
@@ -16,7 +17,7 @@ export const useClientContext = () => {
   return context;
 };
 
-export default () => {
+const story = () => {
   const [newLineContent, setNewLineContent] = useState("");
   return (
     <ClientContext.Provider
@@ -30,3 +31,9 @@ export default () => {
     </ClientContext.Provider>
   );
 };
+
+story.getLayout = function getLayout(page: any) {
+  return <Layout returnTo={"/"}>{page}</Layout>;
+};
+
+export default story;

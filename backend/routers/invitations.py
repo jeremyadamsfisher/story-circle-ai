@@ -68,7 +68,7 @@ def respond_to_invitation(
     invitation = session.get(Invitation, invitation_id)
     if invitation is None:
         raise HTTPException(404, "invitation not found")
-    if invitation.invitee_email != user.email:
+    if invitation.invitee_email != user.name:
         logger.warn(
             "{} attempted to respond to invitation for",
             invitation.invitee_email,
