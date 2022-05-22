@@ -19,9 +19,9 @@ TO "story-circle-app-sa@story-circle-ai.iam";
   - create an API and note the identifier, which is the "audience" from the perspective of the client
   - grab the domain, client id and audience (i.e., API's identifier) and throw them into `.env` file like so
 ```
-DOMAIN="foo.us.auth0.com"
-CLIENT_ID="bar"
-AUDIENCE="http://baz.com"
+DOMAIN=foo.us.auth0.com
+CLIENT_ID=bar
+AUDIENCE=http://baz.com
 ```
 - Create a dot file for the backend, filling in information from Terraform, Auth0, your DNS provider and your mail server
 ```
