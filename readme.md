@@ -25,22 +25,22 @@ AUDIENCE=http://baz.com
 ```
 - Create a dot file for the backend, filling in information from Terraform, Auth0, your DNS provider and your mail server
 ```
-PGCONNSTR="qux"
-PGUSER="quuux@vantai-analysis.iam"
-PGDATABASEINSTANCE="corge"
-PGDATABASE="grault"
-DOMAIN="foo.us.auth0.com"
-API_AUDIENCE="http://baz.com"
-ISSUER="https://graply.us.auth0.com/"
-CLIENT_ID="bar"
-ALGORITHMS="RS256"
+PGCONNSTR=qux
+PGUSER=quuux@vantai-analysis.iam
+PGDATABASEINSTANCE=corge
+PGDATABASE=grault
+DOMAIN=foo.us.auth0.com
+API_AUDIENCE=http://baz.com
+ISSUER=https://graply.us.auth0.com/
+CLIENT_ID=bar
+ALGORITHMS=RS256
 
 # ripped from https://github.com/sabuhish/fastapi-mail
-MAIL_USERNAME="your@email.com"
-MAIL_PASSWORD="strong_password"
-MAIL_FROM="your@email.com"
-MAIL_PORT="587"
-MAIL_SERVER="mail.privateemail.com"
+MAIL_USERNAME=your@email.com
+MAIL_PASSWORD=strong_password
+MAIL_FROM=your@email.com
+MAIL_PORT=587
+MAIL_SERVER=mail.privateemail.com
 
-FRONTEND_URL="http://awesomewebsite.com"
+FRONTEND_URL=http://awesomewebsite.com
 ```
