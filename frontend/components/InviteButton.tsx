@@ -1,40 +1,38 @@
 import { useState } from "react";
 import {
-  FormErrorMessage,
-  Input,
-  FormControl,
-  FormLabel,
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-  PopoverBody,
-  PopoverArrow,
-  PopoverCloseButton,
   Button,
   ButtonProps,
+  FormControl,
+  FormErrorMessage,
+  FormLabel,
+  Input,
+  Popover,
+  PopoverArrow,
+  PopoverBody,
+  PopoverCloseButton,
+  PopoverContent,
+  PopoverTrigger,
   useToast,
+  Spinner,
 } from "@chakra-ui/react";
 import { Formik, Form, Field, FieldInputProps, FormikProps } from "formik";
 import { useSendInvitationCallback } from "../lib/invitation";
 import { useStoryUuid } from "../lib/story";
 
-export const InviteButton: React.FC<ButtonProps> = ({
-  children,
-  ...buttonProps
-}) => {
+export const InviteButton: React.FC<ButtonProps> = (props) => {
   const [invitePlayerDialogOpen, setInvitePlayerDialogOpen] = useState(false);
   const storyUuid = useStoryUuid();
+  if (!storyUuid) {
+    return <Spinner />;
+  }
   return (
     <Popover
       isOpen={invitePlayerDialogOpen}
       onClose={() => setInvitePlayerDialogOpen(false)}
     >
       <PopoverTrigger>
-        <Button
-          {...buttonProps}
-          onClick={() => setInvitePlayerDialogOpen(true)}
-        >
-          {children}
+        <Button {...props} onClick={() => setInvitePlayerDialogOpen(true)}>
+          Invite another player
         </Button>
       </PopoverTrigger>
       <PopoverContent>
@@ -116,7 +114,9 @@ const InvitePlayerForm: React.FC<{
                   id="email"
                   placeholder="foo@bar.com"
                 />
-                <FormErrorMessage>{form.errors.email}</FormErrorMessage>
+                <FormErrorMessage>
+                  {form.errors.email as string}
+                </FormErrorMessage>
               </FormControl>
             )}
           </Field>
