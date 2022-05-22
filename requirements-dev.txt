@@ -1,6 +1,7 @@
 alembic
 scrapy
 pytest
+pytest-xdist
 psycopg2-binary
 beautifulsoup4
 black==22.3.0  # CRUCIAL to keep at the same version
