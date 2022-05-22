@@ -1,7 +1,7 @@
 import ky from "ky-universal";
 import { components } from "./api";
 import { useAuth0 } from "@auth0/auth0-react";
-import auth0config from "../auth0config.json";
+import getConfig from "next/config";
 
 const frontendUrl =
   process.env.NODE_ENV === "development"
@@ -15,6 +15,8 @@ const backendUrl =
 
 export const useApiClient = () => {
   const { isAuthenticated, getAccessTokenSilently } = useAuth0();
+  const { publicRuntimeConfig } = getConfig();
+
   let apiClient = ky.create({
     prefixUrl: backendUrl,
   });
@@ -24,7 +26,7 @@ export const useApiClient = () => {
         beforeRequest: [
           async (request) => {
             const token = await getAccessTokenSilently({
-              audience: auth0config.audience,
+              audience: publicRuntimeConfig.AUDIENCE,
             });
             request.headers.set("Authorization", `Bearer ${token}`);
           },

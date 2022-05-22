@@ -47,7 +47,9 @@ export default () => {
         </NextLink>
       </ToolkitButton>
       {useBreakpoint() !== "sm" && <Spacer />}{" "}
-      {isAuthenticated && <InviteButton {...ToolkitButtonOps} />}
+      {isAuthenticated && (
+        <InviteButton variant={"solid"} {...ToolkitButtonOps} />
+      )}
       {/* <ToolkitButton>How do I play this game</ToolkitButton> */}
     </Stack>
   );
