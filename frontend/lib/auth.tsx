@@ -1,6 +1,5 @@
 import { AppState, Auth0Provider } from "@auth0/auth0-react";
 import { useRouter } from "next/router";
-import auth0config from "../auth0config.json";
 import { frontendUrl } from "../lib/access";
 
 export const Auth0ProviderWithRedirects: React.FC<{
@@ -8,16 +7,20 @@ export const Auth0ProviderWithRedirects: React.FC<{
 }> = ({ children }) => {
   const router = useRouter();
 
-  if (!auth0config.domain || !auth0config.clientId || !auth0config.audience) {
+  if (
+    !process.env.REACT_APP_DOMAIN ||
+    !process.env.REACT_APP_CLIENT_ID ||
+    !process.env.REACT_APP_AUDIENCE
+  ) {
     throw Error("missing auth0 config");
   }
 
   return (
     <Auth0Provider
-      domain={auth0config.domain}
-      clientId={auth0config.clientId}
+      domain={process.env.REACT_APP_DOMAIN}
+      clientId={process.env.REACT_APP_CLIENT_ID}
       redirectUri={frontendUrl + "/auth0redirect"}
-      audience={auth0config.audience}
+      audience={process.env.REACT_APP_AUDIENCE}
       onRedirectCallback={(appState?: AppState) => {
         if (appState) {
           router.push({

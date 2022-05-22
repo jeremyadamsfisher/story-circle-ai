@@ -15,18 +15,14 @@ TO "story-circle-app-sa@story-circle-ai.iam";
   - create a single page app and add:
 **Allowed Callback URLs:** `http://localhost:3000/oauth2redirect`
 **Allowed Web Origins** `http://localhost:3000/oauth2redirect`
-  - on this page, note the domain and 
+  - on this page, note the domain
   - create an API and note the identifier, which is the "audience" from the perspective of the client
-- Also in the Auth0 dashboard, grab the domain, client id and audience (i.e., API's identifier) and throw them into `frontend/src/auth0config.json` like so:
-```json
-{
-  "domain": "foo.us.auth0.com",
-  "clientId": "bar",
-  "audience": "http://baz.com",
-  "scope": "read:storylist write:segment"
-}
+  - grab the domain, client id and audience (i.e., API's identifier) and throw them into `.env` file like so
 ```
-- Add those scopes to the API permission list
+DOMAIN="foo.us.auth0.com"
+CLIENT_ID="bar"
+AUDIENCE="http://baz.com"
+```
 - Create a dot file for the backend, filling in information from Terraform, Auth0, your DNS provider and your mail server
 ```
 PGCONNSTR="qux"
@@ -36,6 +32,7 @@ PGDATABASE="grault"
 DOMAIN="foo.us.auth0.com"
 API_AUDIENCE="http://baz.com"
 ISSUER="https://graply.us.auth0.com/"
+CLIENT_ID="bar"
 ALGORITHMS="RS256"
 
 # ripped from https://github.com/sabuhish/fastapi-mail
