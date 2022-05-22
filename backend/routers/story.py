@@ -1,4 +1,5 @@
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi import BackgroundTasks, Depends, HTTPException
+from loguru import logger
 from sqlmodel import Session
 
 from .. import crud
@@ -6,14 +7,8 @@ from ..auth import get_user_from_request
 from ..db import get_session
 from ..game import perform_ai_turn
 from ..lib.shims import APIRouter
-from ..models import (
-    PlayerOrder,
-    Story,
-    StoryRead,
-    StorySegment,
-    StorySegmentNew,
-    User,
-)
+from ..models import (PlayerOrder, Story, StoryRead, StorySegment,
+                      StorySegmentNew, User)
 
 router = APIRouter()
 
@@ -107,7 +102,9 @@ def append_to_story(
     try:
         story = crud.get_story(story_id, session)
     except crud.DbNotFound:
-        raise HTTPException(404)
+        raise HTTPException(
+            404, f"tried to add to story that does not exist: {story_id}"
+        )
 
     crud.convert_story_to_multiplayer_if_needed(story, author, session)
 

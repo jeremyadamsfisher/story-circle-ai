@@ -1,5 +1,4 @@
 import os
-from functools import reduce
 from urllib.parse import urljoin
 
 from fastapi import BackgroundTasks, Depends, HTTPException
@@ -34,9 +33,9 @@ async def send_invitation(
     if not any(
         story.story_uuid == model.story_uuid for story in user.stories_originated
     ):
-        logger.warn(
+        logger.warning(
             "{} attempted to invite a user to a story they did not originate",
-            user.email,
+            user.name,
         )
         raise HTTPException(
             403, "can only invite other users to stories user originated"
@@ -69,10 +68,10 @@ def respond_to_invitation(
     if invitation is None:
         raise HTTPException(404, "invitation not found")
     if invitation.invitee_email != user.name:
-        logger.warn(
+        logger.warning(
             "{} attempted to respond to invitation for",
             invitation.invitee_email,
-            user.email,
+            user.name,
         )
-        raise HTTPException(403, "invitation email does not match the JWT email")
+        raise HTTPException(422, "invitation email does not match the JWT email")
     return crud.respond_to_invitation(invitation, user, session)
