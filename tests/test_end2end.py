@@ -1,5 +1,6 @@
 import base64
 import time
+import uuid
 from email.mime.multipart import MIMEMultipart
 from typing import Optional, Tuple
 
@@ -17,10 +18,12 @@ P1, P2, P3 = EXAMPLE_USER_EMAILS
 
 
 def create_story(client, story_mode, expected_status_code=200):
+    story_uuid_requested = str(uuid.uuid4())
     assert story_mode in {"single", "multi"}
-    r_create_story = client.post(f"/story/{story_mode}Player")
-    assert r_create_story.status_code == expected_status_code
+    r_create_story = client.get(f"/story/{story_uuid_requested}/{story_mode}Player")
+    assert r_create_story.status_code == expected_status_code, r_create_story.json()
     story_uuid = r_create_story.json()["story_uuid"]
+    assert story_uuid_requested == story_uuid
     return story_uuid
 
 
@@ -31,12 +34,13 @@ def add_to_story(
     r = client.post(
         f"/story/{story_uuid}/{story_mode}Player", json={"content": story_content}
     )
-    assert r.status_code == expected_status_code
+    assert r.status_code == expected_status_code, r.json()
 
 
 def get_story_status(client, story_uuid, story_mode, expected_status_code=200):
+    assert story_mode in {"single", "multi"}
     r = client.get(f"/story/{story_uuid}/{story_mode}Player")
-    assert r.status_code == expected_status_code
+    assert r.status_code == expected_status_code, r.json()
     return r.json()
 
 
@@ -50,7 +54,7 @@ def send_invite(
     """
     with email_client.record_messages() as outbox:
         r = client.post(
-            f"/invitations/send",
+            "/invitations/send",
             json={"story_uuid": story_uuid, "invitee_email": email_address},
         )
         assert r.status_code == expected_status_code

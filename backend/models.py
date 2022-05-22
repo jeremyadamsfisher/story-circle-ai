@@ -10,7 +10,6 @@ class User(SQLModel, table=True):
     __tablename__ = "users"
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str
-    # email: Optional[str]
     story_segments: List["StorySegment"] = Relationship(back_populates="author")
     stories_originated: List["Story"] = Relationship(back_populates="original_author")
     player_ordering: List["PlayerOrder"] = Relationship(back_populates="user")
@@ -24,7 +23,7 @@ class User(SQLModel, table=True):
 class Story(SQLModel, table=True):
     __tablename__ = "stories"
     id: Optional[int] = Field(default=None, primary_key=True)
-    story_uuid: str = Field(default_factory=lambda: str(uuid4()), index=True)
+    story_uuid: str = Field(index=True)
     original_author_id: Optional[int] = Field(default=None, foreign_key="users.id")
     original_author: Optional[User] = Relationship(back_populates="stories_originated")
     invitations: List["Invitation"] = Relationship(back_populates="story")
@@ -84,6 +83,7 @@ class InvitationNew(SQLModel):
 class InvitationRead(SQLModel):
     id: int
     story_id: str
+    story: Story
 
 
 class UserRead(SQLModel):

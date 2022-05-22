@@ -8,8 +8,7 @@ conf = ConnectionConfig(
     MAIL_FROM=os.environ["MAIL_FROM"],
     MAIL_SERVER=os.environ["MAIL_SERVER"],
     MAIL_PORT=int(os.environ["MAIL_PORT"]),
-    MAIL_TLS=True,
-    MAIL_SSL=False,
+    MAIL_SSL=True,
     USE_CREDENTIALS=True,
     VALIDATE_CERTS=True,
 )

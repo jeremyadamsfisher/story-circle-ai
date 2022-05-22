@@ -1,9 +1,9 @@
 import os
-from functools import reduce
 from urllib.parse import urljoin
 
 from fastapi import BackgroundTasks, Depends, HTTPException
 from fastapi_mail import MessageSchema
+from loguru import logger
 from sqlmodel import Session
 
 from .. import crud
@@ -16,14 +16,10 @@ from ..models import Invitation, InvitationNew, InvitationRead
 router = APIRouter()
 
 INVITE_SUBJECT = "You've been invited to contribute to an AI story!"
-INVITE_HTML = """
-<html>
-    <body>
-        <p>You've been invited to work on a story with AI agents!</p>
-        <a id="email-link" href="{}">Click here!</a>
-    <body>
-</html>
-"""
+INVITE_HTML = """<span>
+    <span>You've been invited to work on a story with AI agents!</span>
+    <a id="email-link" href="{}">Click here!</a>
+</span>"""
 
 
 @router.post("/send", response_model=InvitationRead)
@@ -32,26 +28,31 @@ async def send_invitation(
     session: Session = Depends(get_session),
     user=Depends(get_user_from_request),
     background_tasks: BackgroundTasks,
-    invitation_: InvitationNew,
+    model: InvitationNew,
 ):
     if not any(
-        story.story_uuid == invitation_.story_uuid for story in user.stories_originated
+        story.story_uuid == model.story_uuid for story in user.stories_originated
     ):
+        logger.warning(
+            "{} attempted to invite a user to a story they did not originate",
+            user.name,
+        )
         raise HTTPException(
             403, "can only invite other users to stories user originated"
         )
 
-    invitation = crud.add_invitation(invitation_, session)
+    invitation = crud.add_invitation(model, session)
 
-    story_url = reduce(
-        urljoin,
-        [os.environ["APP_ORIGIN"], "/invitations/respond", str(invitation.id)],
+    story_url = urljoin(
+        os.environ.get("FRONTEND_URL", "localhost:3000"),
+        f"/invitation?id={invitation.id}",
     )
 
     msg = MessageSchema(
         subject=INVITE_SUBJECT,
         recipients=[invitation.invitee_email],
         body=INVITE_HTML.format(story_url),
+        subtype="html",
     )
 
     background_tasks.add_task(email_client.send_message, msg)
@@ -66,4 +67,14 @@ def respond_to_invitation(
     session: Session = Depends(get_session),
     user=Depends(get_user_from_request),
 ):
-    return crud.respond_to_invitation(invitation_id, user, session)
+    invitation = session.get(Invitation, invitation_id)
+    if invitation is None:
+        raise HTTPException(404, "invitation not found")
+    if invitation.invitee_email != user.name:
+        logger.warning(
+            "{} attempted to respond to invitation for",
+            invitation.invitee_email,
+            user.name,
+        )
+        raise HTTPException(422, "invitation email does not match the JWT email")
+    return crud.respond_to_invitation(invitation, user, session)

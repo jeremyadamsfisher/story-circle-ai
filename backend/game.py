@@ -54,6 +54,11 @@ def next_segment_prediction(prompt: str) -> str:
             f"unable to generate from prompt: {prompt_full}\n"
             f"generated text: {text_gen_raw}"
         )
+    elif len(text_gen) < 10:
+        raise InferenceProblemEmptyPrediction(
+            f"generated text is too short from prompt: {prompt_full}\n"
+            f"generated text: {text_gen_raw}"
+        )
     return text_gen
 
 
