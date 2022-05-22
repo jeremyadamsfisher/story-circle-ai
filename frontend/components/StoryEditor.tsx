@@ -38,12 +38,12 @@ export default () => {
     );
   return (
     <Box {...outline} textAlign={"center"} background={greyBg}>
-      {story.segments.map((segment, i) => {
+      {story.segments.map((segment, i: number) => {
         const lines = segment.content.split("\n");
         return (
           <>
             {/* new line characters are ignored by HTML engines */}
-            {lines.map((line, j) => {
+            {lines.map((line, j: number) => {
               const key = hashString(line + "@" + i + ":" + j);
               const notLastLine = j !== lines.length - 1;
               return (
