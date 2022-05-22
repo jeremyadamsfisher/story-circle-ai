@@ -7,8 +7,7 @@ from ..auth import get_user_from_request
 from ..db import get_session
 from ..game import perform_ai_turn
 from ..lib.shims import APIRouter
-from ..models import (PlayerOrder, Story, StoryRead, StorySegment,
-                      StorySegmentNew, User)
+from ..models import PlayerOrder, Story, StoryRead, StorySegment, StorySegmentNew, User
 
 router = APIRouter()
 

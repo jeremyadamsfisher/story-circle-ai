@@ -3,8 +3,7 @@ from typing import Optional
 
 from sqlmodel import Session, select
 
-from .models import (Invitation, InvitationNew, PlayerOrder, Story, User,
-                     UserStoriesRead)
+from .models import Invitation, InvitationNew, PlayerOrder, Story, User, UserStoriesRead
 
 logger = logging.getLogger(__name__)
 
