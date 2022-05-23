@@ -1,7 +1,10 @@
-locals {
-  admin_email = "jeremy.adams.fisher@gmail.com"
+variable "project" {
+  type = string
 }
 
+variable "admin_email" {
+  type = string
+}
 
 data "google_client_config" "gcc" {}
 
@@ -51,14 +54,14 @@ resource "google_sql_user" "sa" {
 }
 
 resource "google_sql_user" "admin" {
-  name     = local.admin_email
+  name     = var.admin_email
   instance = google_sql_database_instance.db.name
   type     = "CLOUD_IAM_USER"
 }
 
 resource "google_project_iam_binding" "sa" {
-  project = data.google_client_config.gcc.project
-  members = ["serviceAccount:${google_service_account.sa.email}", "user:${local.admin_email}"]
+  project = var.project
+  members = ["serviceAccount:${google_service_account.sa.email}", "user:${var.admin_email}"]
   for_each = toset([
     "roles/cloudsql.client",
     "roles/cloudsql.instanceUser",
@@ -67,11 +70,7 @@ resource "google_project_iam_binding" "sa" {
   role = each.value
 }
 
-resource "google_service_account_key" "sa" {
-  service_account_id = google_service_account.sa.id
-}
-
-output "service_account_key" {
-  value     = base64decode(google_service_account_key.sa.private_key)
-  sensitive = true
+resource "google_app_engine_application" "app" {
+  project     = var.project
+  location_id = "us-east1"
 }
