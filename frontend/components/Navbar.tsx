@@ -77,7 +77,7 @@ const NavBar: React.FC<INavBar> = ({ returnTo }) => {
                   <Center style={{ padding: 10 }}>
                     <Avatar
                       size={"2xl"}
-                      src={user!.photoURL ? user!.photoURL : null}
+                      src={user!.photoURL ? user!.photoURL : undefined}
                     />
                   </Center>
                   <Center style={{ padding: 10 }}>
