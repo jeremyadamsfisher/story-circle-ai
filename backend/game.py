@@ -5,7 +5,6 @@ import string
 
 import requests
 from sqlmodel import Session
-from transformers import pipeline
 
 from . import crud
 from .db import get_engine
@@ -34,14 +33,17 @@ def text_generator_hosted(prompt):
     return r.json()
 
 
-# lazy to avoid downloading model weights in testing and production
+def text_generator_local(prompt):
+    from transformers import pipeline
+
+    return pipeline("text-generation", "pranavpsv/gpt2-genre-story-generator")(prompt)
+
+
 text_generator = {
-    "TESTING": lambda: text_generator_testing,
-    "LOCAL": lambda: pipeline(
-        "text-generation", "pranavpsv/gpt2-genre-story-generator"
-    ),
-    "PROD": lambda: text_generator_hosted,
-}[os.environ["APP_ENV"]]()
+    "TESTING": text_generator_testing,
+    "LOCAL": text_generator_local,
+    "PROD": text_generator_hosted,
+}[os.environ["APP_ENV"]]
 
 
 class InferenceProblem(Exception):
