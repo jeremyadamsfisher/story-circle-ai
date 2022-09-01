@@ -27,7 +27,7 @@ def text_generator_hosted(prompt):
     r = requests.post(
         "https://api-inference.huggingface.co/models/pranavpsv/gpt2-genre-story-generator",
         headers={"Authorization": f"Bearer {api_token}"},
-        json={"inputs": prompt},
+        json={"inputs": prompt, "use_cache": False},
     )
     r.raise_for_status()
     return r.json()
@@ -95,7 +95,11 @@ def perform_ai_turn(story_id):
         for _ in range(N_FAILURES_ALLOWED):
             try:
                 next_segment_content = next_segment_prediction(prompt)
-            except (InferenceProblemNotASentence, InferenceProblemEmptyPrediction) as e:
+            except (
+                InferenceProblemNotASentence,
+                InferenceProblemEmptyPrediction,
+                requests.exceptions.HTTPError,
+            ) as e:
                 logger.error(e)
                 continue
             else:
