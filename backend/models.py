@@ -1,9 +1,6 @@
-from datetime import datetime
 from typing import List, Optional
-from uuid import uuid4
 
-from sqlalchemy_utils import UUIDType
-from sqlmodel import DateTime, Field, Relationship, SQLModel
+from sqlmodel import Field, Relationship, SQLModel
 
 
 class User(SQLModel, table=True):

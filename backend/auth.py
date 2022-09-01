@@ -1,6 +1,3 @@
-import os
-
-import jwt
 import firebase_admin
 import firebase_admin.auth
 from fastapi import Depends, HTTPException
@@ -14,8 +11,10 @@ from .db import get_session
 
 firebase_admin.initialize_app()
 
+
 def verify_token(token):
     return firebase_admin.auth.verify_id_token(token)
+
 
 token_auth_scheme = HTTPBearer()
 
