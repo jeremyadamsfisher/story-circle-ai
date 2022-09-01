@@ -1,10 +1,10 @@
-import logging
 import os
 import re
 import string
 
 import requests
 from sqlmodel import Session
+from loguru import logger
 
 from . import crud
 from .db import get_engine
