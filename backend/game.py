@@ -1,6 +1,8 @@
+import random
 import os
 import re
 import string
+import time
 
 import requests
 from sqlmodel import Session
@@ -14,6 +16,15 @@ from .models import StorySegment
 N_FAILURES_ALLOWED = 10
 MAX_PROMPT_LENGTH = 50
 WORDS_THAT_CAN_HAVE_A_PERIOD = ["mr" "ms" "mrs" "jr" "sr"]
+MODEL_ID = "EleutherAI/gpt-j-6B"
+
+SENTENCE_STARTERS = [
+    "Then, ",
+    "Suddenly, ",
+    "And then, ",
+    "So, ",
+    "Granted, "
+]
 
 
 def text_generator_testing(prompt):
@@ -24,7 +35,7 @@ def text_generator_testing(prompt):
 def text_generator_hosted(prompt):
     api_token = os.environ["HUGGINGFACE_API_TOKEN"]
     r = requests.post(
-        "https://api-inference.huggingface.co/models/pranavpsv/gpt2-genre-story-generator",
+        f"https://api-inference.huggingface.co/models/{MODEL_ID}",
         headers={"Authorization": f"Bearer {api_token}"},
         json={"inputs": prompt, "use_cache": False},
     )
@@ -35,7 +46,7 @@ def text_generator_hosted(prompt):
 def text_generator_local(prompt):
     from transformers import pipeline
 
-    return pipeline("text-generation", "pranavpsv/gpt2-genre-story-generator")(prompt)
+    return pipeline("text-generation", MODEL_ID)(prompt)
 
 
 text_generator = {
@@ -58,14 +69,37 @@ class InferenceProblemEmptyPrediction(Exception):
 
 
 def next_segment_prediction(prompt: str) -> str:
+    starter = "" if 0.0 <= random.random() < 0.05 else random.choice(SENTENCE_STARTERS)
     prompt = prompt.strip()
-    prompt_full = (prompt + " ")[-MAX_PROMPT_LENGTH:]
-    (text_gen_raw,) = text_generator(prompt_full)
-    text_gen_raw = text_gen_raw["generated_text"]
-    text_gen_raw = text_gen_raw[len(prompt_full) :]
-    text_gen = "".join(c for c in text_gen_raw if c in string.printable)
+    prompt_full = (prompt + " " + starter)[-MAX_PROMPT_LENGTH:]
+    (res,) = text_generator(prompt_full)
+    text_gen_raw = res["generated_text"]
+    text_gen = starter + text_gen_raw[len(prompt_full) :]
+    text_gen = (
+        "".join(c for c in text_gen if c in string.printable)
+        .replace("\n", " ")
+        .replace("…", "...")
+    )
+    while "  " in text_gen:
+        text_gen = text_gen.replace("  ", "")
+
+    logger.info(
+        "\n"
+        "STARTER:         {}\n"
+        "PROMPT:          {}\n"
+        "TEXT GEN'D:      {}\n"
+        "TEXT CLEANED UP: {}",
+        starter,
+        prompt,
+        text_gen_raw,
+        text_gen,
+    )
+
     try:
-        (text_gen,) = re.match(r"\W*(\w.*?\.)", text_gen).groups()
+        # Regex explanation: find a word, then match few non-word characters until 
+        # a sentence terminating punctuation is unencoutered. If present,
+        # the terminating quotation mark is captured as well.
+        (text_gen, _) = re.match(r"""\W*(.*?[\.!?](["'])?)""", text_gen).groups()
     except (ValueError, AttributeError):
         raise InferenceProblemNotASentence(f"invalid sentence: {text_gen}")
     if len(text_gen) == 0:
@@ -97,9 +131,12 @@ def perform_ai_turn(story_id):
             except (
                 InferenceProblemNotASentence,
                 InferenceProblemEmptyPrediction,
-                requests.exceptions.HTTPError,
             ) as e:
                 logger.error(e)
+                continue
+            except requests.exceptions.HTTPError:
+                logger.error(e)
+                time.sleep(2)
                 continue
             else:
                 segment = StorySegment(
