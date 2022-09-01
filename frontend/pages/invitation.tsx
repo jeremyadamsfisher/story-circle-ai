@@ -38,7 +38,7 @@ export default () => {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!user) {
     return (
       <Center py={175}>
         <VStack>
