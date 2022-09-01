@@ -1,6 +1,6 @@
 import os
 
-from google.cloud.sql.connector import connector
+from google.cloud.sql.connector import Connector
 from sqlmodel import Session, create_engine
 
 if os.environ.get("IN_MEMORY_DB") == "1":
@@ -12,6 +12,7 @@ if os.environ.get("IN_MEMORY_DB") == "1":
     )
     SQLModel.metadata.create_all(engine)
 else:
+    connector = Connector(enable_iam_auth=True)
     engine = create_engine(
         "postgresql+pg8000://",
         creator=lambda: connector.connect(
@@ -19,7 +20,6 @@ else:
             "pg8000",
             user="story-circle-app-sa@story-circle-ai.iam",
             db="faboo",
-            enable_iam_auth=True,
         ),
     )
 
