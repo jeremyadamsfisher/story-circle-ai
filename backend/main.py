@@ -35,19 +35,9 @@ app_env = os.environ["APP_ENV"]
 logger.info(f"booting into {app_env} mode")
 
 
-if app_env == "LOCAL":
-    logger.info("allowing CORS from anywhere")
-    origins = [
-        "*",
-        "http://localhost",
-        "http://localhost:3000",
-    ]
-else:
-    origins = ["http://storycircle.lol"]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
