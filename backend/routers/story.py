@@ -127,9 +127,11 @@ def append_to_story(
     session.refresh(story)
 
     if story.whose_turn_is_it.ai_player:
-        if os.environ["APP_ENV"] == "LOCAL":
+        if os.environ["APP_ENV"] in {"LOCAL", "TESTING"}:
             background_tasks.add_task(perform_ai_turn, story.story_uuid)
         elif os.environ["APP_ENV"] == "PROD":
             perform_ai_turn(story.story_uuid)
+        else:
+            raise ValueError
 
     return story

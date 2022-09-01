@@ -118,7 +118,7 @@ def test_single_player_can_add_to_story(client):
         add_to_story(client, story_uuid, segment, "single")
         for _ in range(10):
             story = get_story_status(client, story_uuid, "single")
-            if story["whose_turn_is_it"]["single_player"]:
+            if story["whose_turn_is_it"]["single_player"] is True:
                 break
             else:
                 time.sleep(2)

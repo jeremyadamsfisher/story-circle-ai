@@ -34,11 +34,14 @@ def text_generator_hosted(prompt):
     return r.json()
 
 
+# lazy to avoid downloading model weights in testing and production
 text_generator = {
-    "TESTING": text_generator_testing,
-    "LOCAL": pipeline("text-generation", "pranavpsv/gpt2-genre-story-generator"),
-    "PROD": text_generator_hosted,
-}[os.environ["APP_ENV"]]
+    "TESTING": lambda: text_generator_testing,
+    "LOCAL": lambda: pipeline(
+        "text-generation", "pranavpsv/gpt2-genre-story-generator"
+    ),
+    "PROD": lambda: text_generator_hosted,
+}[os.environ["APP_ENV"]]()
 
 
 class InferenceProblem(Exception):
