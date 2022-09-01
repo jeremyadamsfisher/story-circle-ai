@@ -33,7 +33,7 @@ export default () => {
       <Alert status="error" {...outline}>
         <AlertIcon />
         <AlertTitle mr={2}>Error:</AlertTitle>
-        <AlertDescription>{JSON.stringify(error)}</AlertDescription>
+        <AlertDescription>{error.toString()}</AlertDescription>
       </Alert>
     );
   return (

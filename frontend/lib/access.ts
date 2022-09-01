@@ -1,23 +1,20 @@
 import ky from "ky-universal";
 import { components } from "./api";
-import { useAuth0 } from "@auth0/auth0-react";
-import getConfig from "next/config";
-
+import { auth } from "./auth";
+import { useAuthState } from "react-firebase-hooks/auth";
+import { getIdToken } from "firebase/auth";
 
 export const useApiClient = () => {
-  const { isAuthenticated, getAccessTokenSilently } = useAuth0();
-  const { publicRuntimeConfig } = getConfig();
+  const [user] = useAuthState(auth);
   let apiClient = ky.create({
-    prefixUrl: publicRuntimeConfig.BACKEND_URL,
+    prefixUrl: "/api",
   });
-  if (isAuthenticated) {
+  if (user) {
     apiClient = apiClient.extend({
       hooks: {
         beforeRequest: [
           async (request) => {
-            const token = await getAccessTokenSilently({
-              audience: publicRuntimeConfig.AUDIENCE,
-            });
+            const token = await getIdToken(user);
             request.headers.set("Authorization", `Bearer ${token}`);
           },
         ],
@@ -30,4 +27,3 @@ export const useApiClient = () => {
 type schemas = components["schemas"];
 
 export type { schemas };
-

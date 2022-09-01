@@ -3,12 +3,26 @@
 const nextConfig = {
   reactStrictMode: true,
   publicRuntimeConfig: {
-    DOMAIN: process.env.DOMAIN,
-    CLIENT_ID: process.env.CLIENT_ID,
-    AUDIENCE: process.env.AUDIENCE,
-    FRONTEND_URL: process.env.FRONTEND_URL,
     BACKEND_URL: process.env.BACKEND_URL,
+  },
+  webpack: function (config) {
+    config.module.rules.push({
+      test: /\.ya?ml$/,
+      use: "js-yaml-loader",
+    });
+    return config;
+  },
+  compiler: {
+    styledComponents: true,
+  },
+  async rewrites() {
+    return [
+      {
+        source: "/api/:path*",
+        destination: "https://story-circle-ai.ue.r.appspot.com/:path*",
+      },
+    ];
   },
 };
 
-module.exports = nextConfig
+module.exports = nextConfig;

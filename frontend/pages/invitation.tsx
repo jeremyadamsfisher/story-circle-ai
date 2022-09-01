@@ -8,17 +8,17 @@ import {
 import { LogInButton } from "../components/LogInOutButtons";
 import { Text, Center, VStack } from "@chakra-ui/react";
 import { useRouter } from "next/router";
-import { useAuth0 } from "@auth0/auth0-react";
 import { useRespondToInvitationCallback } from "../lib/invitation";
+import { useAuthState } from "react-firebase-hooks/auth";
+import { auth } from "../lib/auth";
 
 export default () => {
   const router = useRouter();
-  const { isAuthenticated } = useAuth0();
   const respondToInvitation = useRespondToInvitationCallback();
+  const [user] = useAuthState(auth);
 
   useEffect(() => {
-    if (isAuthenticated && router.isReady) {
-      alert(isAuthenticated!);
+    if (user && router.isReady) {
       respondToInvitation(router.query!.id as string).then((invitation) => {
         router.push({
           pathname: "/story",
@@ -26,7 +26,7 @@ export default () => {
         });
       });
     }
-  }, [isAuthenticated, router.isReady, router.query?.id]);
+  }, [user, router.isReady, router.query?.id]);
 
   if (router.isReady && !router.query?.id) {
     return (
@@ -38,7 +38,7 @@ export default () => {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!user) {
     return (
       <Center py={175}>
         <VStack>

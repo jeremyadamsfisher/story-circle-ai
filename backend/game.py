@@ -3,8 +3,8 @@ import os
 import re
 import string
 
+import requests
 from sqlmodel import Session
-from transformers import pipeline
 
 from . import crud
 from .db import get_engine
@@ -16,14 +16,34 @@ N_FAILURES_ALLOWED = 10
 MAX_PROMPT_LENGTH = 50
 WORDS_THAT_CAN_HAVE_A_PERIOD = ["mr" "ms" "mrs" "jr" "sr"]
 
-if os.environ["APP_ENV"] == "TESTING":
 
-    def text_generator(prompt):
-        EXAMPLE = "So we beat on, boats against the current, borne back ceaselessly into the past."
-        return [{"generated_text": prompt + EXAMPLE}]
+def text_generator_testing(prompt):
+    EXAMPLE = "So we beat on, boats against the current, borne back ceaselessly into the past."
+    return [{"generated_text": prompt + EXAMPLE}]
 
-else:
-    text_generator = pipeline("text-generation", "pranavpsv/gpt2-genre-story-generator")
+
+def text_generator_hosted(prompt):
+    api_token = os.environ["HUGGINGFACE_API_TOKEN"]
+    r = requests.post(
+        "https://api-inference.huggingface.co/models/pranavpsv/gpt2-genre-story-generator",
+        headers={"Authorization": f"Bearer {api_token}"},
+        json={"inputs": prompt, "use_cache": False},
+    )
+    r.raise_for_status()
+    return r.json()
+
+
+def text_generator_local(prompt):
+    from transformers import pipeline
+
+    return pipeline("text-generation", "pranavpsv/gpt2-genre-story-generator")(prompt)
+
+
+text_generator = {
+    "TESTING": text_generator_testing,
+    "LOCAL": text_generator_local,
+    "PROD": text_generator_hosted,
+}[os.environ["APP_ENV"]]
 
 
 class InferenceProblem(Exception):
@@ -75,7 +95,11 @@ def perform_ai_turn(story_id):
         for _ in range(N_FAILURES_ALLOWED):
             try:
                 next_segment_content = next_segment_prediction(prompt)
-            except (InferenceProblemNotASentence, InferenceProblemEmptyPrediction) as e:
+            except (
+                InferenceProblemNotASentence,
+                InferenceProblemEmptyPrediction,
+                requests.exceptions.HTTPError,
+            ) as e:
                 logger.error(e)
                 continue
             else:

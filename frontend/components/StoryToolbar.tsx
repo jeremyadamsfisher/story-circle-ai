@@ -10,7 +10,9 @@ import { useClientContext } from "../pages/story";
 import { InviteButton } from "../components/InviteButton";
 // import { AddIcon } from "@chakra-ui/icons";
 import NextLink from "next/link";
-import { useAuth0 } from "@auth0/auth0-react";
+import { useAuthState } from "react-firebase-hooks/auth";
+import { auth } from "../lib/auth";
+import { Router, useRouter } from "next/router";
 
 const ToolkitButtonOps = {
   w: { base: "100%", md: "300px" },
@@ -27,7 +29,8 @@ const ToolkitButton = ({ children, ...props }: ButtonProps) => {
 export default () => {
   const { newLineContent, setNewLineContent } = useClientContext();
   const { addToStoryCallback } = useStory();
-  const { isAuthenticated } = useAuth0();
+  const [user] = useAuthState(auth);
+  const router = useRouter();
 
   return (
     <Stack py={5} direction={{ base: "column", md: "row" }} align={"center"}>
@@ -41,15 +44,17 @@ export default () => {
       >
         Add to story
       </ToolkitButton>
-      <ToolkitButton variant={"solid"} mr={4}>
-        <NextLink href={"/"}>
-          <a>New story</a>
-        </NextLink>
+      <ToolkitButton
+        variant={"solid"}
+        mr={4}
+        onClick={() => {
+          router.push("/");
+        }}
+      >
+        New story
       </ToolkitButton>
       {useBreakpoint() !== "sm" && <Spacer />}{" "}
-      {isAuthenticated && (
-        <InviteButton variant={"solid"} {...ToolkitButtonOps} />
-      )}
+      {user && <InviteButton variant={"solid"} {...ToolkitButtonOps} />}
       {/* <ToolkitButton>How do I play this game</ToolkitButton> */}
     </Stack>
   );

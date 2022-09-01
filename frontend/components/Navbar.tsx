@@ -21,7 +21,9 @@ import { CgLogOut } from "react-icons/cg";
 import { MoonIcon, SunIcon } from "@chakra-ui/icons";
 import { BiBookOpen } from "react-icons/bi";
 import { LogInButton } from "./LogInOutButtons";
-import { useAuth0 } from "@auth0/auth0-react";
+import { signOut } from "firebase/auth";
+import { useAuthState } from "react-firebase-hooks/auth";
+import { auth } from "../lib/auth";
 
 const Logo = () => <Heading size={"md"}>Story Circle</Heading>;
 
@@ -31,8 +33,8 @@ interface INavBar {
 
 const NavBar: React.FC<INavBar> = ({ returnTo }) => {
   const { colorMode, toggleColorMode } = useColorMode();
-  const { isLoading, error: auth0Error, isAuthenticated, user } = useAuth0();
-  const { logout } = useAuth0();
+  const [user, isLoading, auth0Error] = useAuthState(auth);
+
   return (
     <Box
       bg={useColorModeValue("white", "gray.800")}
@@ -59,7 +61,7 @@ const NavBar: React.FC<INavBar> = ({ returnTo }) => {
           )}
           {isLoading ? (
             <></>
-          ) : isAuthenticated ? (
+          ) : user ? (
             <Flex alignItems={"center"}>
               <Menu>
                 <MenuButton
@@ -69,17 +71,20 @@ const NavBar: React.FC<INavBar> = ({ returnTo }) => {
                   cursor={"pointer"}
                   minW={0}
                 >
-                  <Avatar size={"md"} name={user!.name} />
+                  <Avatar size={"md"} name={user!.displayName || ""} />
                 </MenuButton>
                 <MenuList>
                   <Center style={{ padding: 10 }}>
-                    <Avatar size={"2xl"} src={user!.profile} />
+                    <Avatar
+                      size={"2xl"}
+                      src={user!.photoURL ? user!.photoURL : undefined}
+                    />
                   </Center>
                   <Center style={{ padding: 10 }}>
                     <p>{user!.email}</p>
                   </Center>
                   {/* <MenuItem icon={<BiBookOpen />}>Your stories</MenuItem> */}
-                  <MenuItem icon={<CgLogOut />} onClick={() => logout()}>
+                  <MenuItem icon={<CgLogOut />} onClick={() => signOut(auth)}>
                     Log out
                   </MenuItem>
                 </MenuList>
