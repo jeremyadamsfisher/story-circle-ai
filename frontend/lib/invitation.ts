@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { useApiClient, schemas } from "./access";
-import { useAuth0 } from "@auth0/auth0-react";
+import { useAuthState } from "react-firebase-hooks/auth";
+import { auth } from "../lib/auth";
 
 type InvitationNew = schemas["InvitationNew"];
 type InvitationRead = schemas["InvitationRead"];
@@ -21,12 +22,12 @@ export const useSendInvitationCallback = () => {
 
 export const useRespondToInvitationCallback = () => {
   const apiClient = useApiClient();
-  const { isAuthenticated } = useAuth0();
+  const [user] = useAuthState(auth);
   return useCallback(
     async (invitationId: string): Promise<InvitationRead> => {
       return apiClient.get(`invitations/respond/${invitationId}`).json();
     },
-    [isAuthenticated]
+    [user]
   );
 };
 
