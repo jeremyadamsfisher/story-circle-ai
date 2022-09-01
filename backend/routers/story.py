@@ -1,5 +1,6 @@
+import os
+
 from fastapi import BackgroundTasks, Depends, HTTPException
-from loguru import logger
 from sqlmodel import Session
 
 from .. import crud
@@ -126,6 +127,9 @@ def append_to_story(
     session.refresh(story)
 
     if story.whose_turn_is_it.ai_player:
-        background_tasks.add_task(perform_ai_turn, story.story_uuid)
+        if os.environ["APP_ENV"] == "LOCAL":
+            background_tasks.add_task(perform_ai_turn, story.story_uuid)
+        elif os.environ["APP_ENV"] == "PROD":
+            perform_ai_turn(story.story_uuid)
 
     return story

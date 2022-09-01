@@ -3,6 +3,7 @@ import os
 import re
 import string
 
+import requests
 from sqlmodel import Session
 from transformers import pipeline
 
@@ -16,14 +17,28 @@ N_FAILURES_ALLOWED = 10
 MAX_PROMPT_LENGTH = 50
 WORDS_THAT_CAN_HAVE_A_PERIOD = ["mr" "ms" "mrs" "jr" "sr"]
 
-if os.environ["APP_ENV"] == "TESTING":
 
-    def text_generator(prompt):
-        EXAMPLE = "So we beat on, boats against the current, borne back ceaselessly into the past."
-        return [{"generated_text": prompt + EXAMPLE}]
+def text_generator_testing(prompt):
+    EXAMPLE = "So we beat on, boats against the current, borne back ceaselessly into the past."
+    return [{"generated_text": prompt + EXAMPLE}]
 
-else:
-    text_generator = pipeline("text-generation", "pranavpsv/gpt2-genre-story-generator")
+
+def text_generator_hosted(prompt):
+    api_token = os.environ["HUGGINGFACE_API_TOKEN"]
+    r = requests.post(
+        "https://api-inference.huggingface.co/models/pranavpsv/gpt2-genre-story-generator",
+        headers={"Authorization": f"Bearer {api_token}"},
+        json={"inputs": prompt},
+    )
+    r.raise_for_status()
+    return r.json()
+
+
+text_generator = {
+    "TESTING": text_generator_testing,
+    "LOCAL": pipeline("text-generation", "pranavpsv/gpt2-genre-story-generator"),
+    "PROD": text_generator_hosted,
+}[os.environ["APP_ENV"]]
 
 
 class InferenceProblem(Exception):

@@ -35,7 +35,7 @@ app_env = os.environ["APP_ENV"]
 logger.info(f"booting into {app_env} mode")
 
 
-if app_env == "DEV":
+if app_env == "LOCAL":
     logger.info("allowing CORS from anywhere")
     origins = [
         "*",
