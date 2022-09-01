@@ -10,7 +10,6 @@ from . import crud
 from .db import get_engine
 from .models import StorySegment
 
-logger = logging.getLogger(__name__)
 
 N_FAILURES_ALLOWED = 10
 MAX_PROMPT_LENGTH = 50
