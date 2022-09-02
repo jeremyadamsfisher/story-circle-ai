@@ -29,6 +29,7 @@ export default () => {
     padding: 10,
   };
   const greyBg = useColorModeValue("gray.50", "gray.700");
+  const foregroundColor = useColorModeValue("black", "white");
   if (!story)
     return (
       <Center {...outline} background={greyBg}>
@@ -72,7 +73,7 @@ export default () => {
         <StoryNewLineField />
       ) : story.whose_turn_is_it.ai_player ? (
         <span>
-          <BeatLoader size={5} />
+          <BeatLoader size={5} color={foregroundColor} />
         </span>
       ) : (
         <Center>
