@@ -1,30 +1,23 @@
-import random
 import os
+import random
 import re
 import string
 import time
 
 import requests
-from sqlmodel import Session
 from loguru import logger
+from sqlmodel import Session
 
 from . import crud
 from .db import get_engine
 from .models import StorySegment
-
 
 N_FAILURES_ALLOWED = 10
 MAX_PROMPT_LENGTH = 50
 WORDS_THAT_CAN_HAVE_A_PERIOD = ["mr" "ms" "mrs" "jr" "sr"]
 MODEL_ID = "EleutherAI/gpt-j-6B"
 
-SENTENCE_STARTERS = [
-    "Then, ",
-    "Suddenly, ",
-    "And then, ",
-    "So, ",
-    "Granted, "
-]
+SENTENCE_STARTERS = ["Then, ", "Suddenly, ", "And then, ", "So, ", "Granted, "]
 
 
 def text_generator_testing(prompt):
@@ -67,12 +60,14 @@ class InferenceProblemNotASentence(Exception):
 class InferenceProblemEmptyPrediction(Exception):
     ...
 
+
 class InferenceGrammaticalWonkiness(Exception):
     ...
 
+
 def check_for_imbalance(text: str) -> bool:
     """Make sure there is no imbalanced punctuation
-    
+
     Example:
         >>> assert check_for_imbalance('Steve said, "Woah."') is True
         >>> assert check_for_imbalance('Then Fabiola said, "This is great.') is False
@@ -115,7 +110,7 @@ def next_segment_prediction(prompt: str) -> str:
     )
 
     try:
-        # Regex explanation: find a word, then match few non-word characters until 
+        # Regex explanation: find a word, then match few non-word characters until
         # a sentence terminating punctuation is unencoutered. If present,
         # the terminating quotation mark is captured as well.
         (text_gen, _) = re.match(r"""\W*(.*?[\.!?](["'])?)""", text_gen).groups()

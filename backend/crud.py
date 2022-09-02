@@ -5,7 +5,6 @@ from sqlmodel import Session, select
 
 from .models import Invitation, InvitationNew, PlayerOrder, Story, User, UserStoriesRead
 
-
 SINGLE_PLAYER_NAME = "single-player"
 AI_PLAYER_NAME = "ai-player"
 
