@@ -67,6 +67,23 @@ class InferenceProblemNotASentence(Exception):
 class InferenceProblemEmptyPrediction(Exception):
     ...
 
+class InferenceGrammaticalWonkiness(Exception):
+    ...
+
+def check_for_imbalance(text: str) -> bool:
+    """Make sure there is no imbalanced punctuation
+    
+    Example:
+        >>> assert check_for_imbalance('Steve said, "Woah."') is True
+        >>> assert check_for_imbalance('Then Fabiola said, "This is great.') is False
+    """
+    for open_, close in ["''", '""', "()", "[]", "<>"]:
+        if open_ == close and text.count(open_) % 2 != 0:
+            return False
+        elif text.count(open_) != text.count(close):
+            return False
+    return True
+
 
 def next_segment_prediction(prompt: str) -> str:
     starter = "" if 0.0 <= random.random() < 0.05 else random.choice(SENTENCE_STARTERS)
@@ -78,10 +95,12 @@ def next_segment_prediction(prompt: str) -> str:
     text_gen = (
         "".join(c for c in text_gen if c in string.printable)
         .replace("\n", " ")
-        .replace("…", "...")
+        # aesthetically and narratively, I find it more pleasing to collapse these dots
+        .replace("…", ".")
+        .replace("...", ".")
     )
     while "  " in text_gen:
-        text_gen = text_gen.replace("  ", "")
+        text_gen = text_gen.replace("  ", " ")
 
     logger.info(
         "\n"
@@ -110,6 +129,11 @@ def next_segment_prediction(prompt: str) -> str:
     elif len(text_gen) < 10:
         raise InferenceProblemEmptyPrediction(
             f"generated text is too short from prompt: {prompt_full}\n"
+            f"generated text: {text_gen_raw}"
+        )
+    elif check_for_imbalance(text_gen) is False:
+        raise InferenceGrammaticalWonkiness(
+            f"generated text is grammatically weird: {prompt_full}\n"
             f"generated text: {text_gen_raw}"
         )
     return text_gen
