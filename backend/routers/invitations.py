@@ -16,10 +16,10 @@ from ..models import Invitation, InvitationNew, InvitationRead
 router = APIRouter()
 
 INVITE_SUBJECT = "You've been invited to contribute to an AI story!"
-INVITE_HTML = """<span>
+INVITE_HTML = """<div>
     <span>You've been invited to work on a story with AI agents!</span>
     <a id="email-link" href="{}">Click here!</a>
-</span>"""
+</div>"""
 
 
 @router.post("/send", response_model=InvitationRead)
@@ -54,6 +54,8 @@ async def send_invitation(
         body=INVITE_HTML.format(story_url),
         subtype="html",
     )
+
+    logger.info("inviting {} to {}", invitation.invitee_email, invitation.story.story_uuid)
 
     background_tasks.add_task(email_client.send_message, msg)
 
