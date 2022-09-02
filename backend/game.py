@@ -15,7 +15,7 @@ from .models import StorySegment
 N_FAILURES_ALLOWED = 10
 MAX_PROMPT_LENGTH = 50
 WORDS_THAT_CAN_HAVE_A_PERIOD = ["mr" "ms" "mrs" "jr" "sr"]
-MODEL_ID = "EleutherAI/gpt-j-6B"
+MODEL_ID = "gpt2-large"
 
 SENTENCE_STARTERS = ["Then, ", "Suddenly, ", "And then, ", "So, ", "Granted, "]
 
