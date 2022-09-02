@@ -4,11 +4,11 @@ import warnings
 from pathlib import Path
 
 logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from loguru import logger
 
 if Path("./.env").exists():
     logger.info(".env detected")

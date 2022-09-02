@@ -1,11 +1,9 @@
-import logging
 from typing import Optional
 
+from loguru import logger
 from sqlmodel import Session, select
 
 from .models import Invitation, InvitationNew, PlayerOrder, Story, User, UserStoriesRead
-
-logger = logging.getLogger(__name__)
 
 SINGLE_PLAYER_NAME = "single-player"
 AI_PLAYER_NAME = "ai-player"
