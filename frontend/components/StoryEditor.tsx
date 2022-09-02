@@ -45,11 +45,11 @@ export default () => {
             {/* new line characters are ignored by HTML engines */}
             {lines.map((line, j: number) => {
               const key = hashString(line + "@" + i + ":" + j);
-              const notLastLine = j !== lines.length - 1;
+              const lastLine = j === lines.length - 1;
               return (
                 <>
                   <span key={key}>{line}</span>
-                  {notLastLine && <br />}{" "}
+                  {!lastLine && <br />}{" "}
                 </>
               );
             })}
