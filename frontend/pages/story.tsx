@@ -2,6 +2,7 @@ import { useState, useContext, createContext } from "react";
 import StoryToolbar from "../components/StoryToolbar";
 import StoryEditor from "../components/StoryEditor";
 import Layout from "../components/layout";
+import Head from "next/head";
 
 //@ts-ignore
 const ClientContext = createContext<{
@@ -20,15 +21,20 @@ export const useClientContext = () => {
 const story = () => {
   const [newLineContent, setNewLineContent] = useState("");
   return (
-    <ClientContext.Provider
-      value={{
-        newLineContent: newLineContent,
-        setNewLineContent: setNewLineContent,
-      }}
-    >
-      <StoryEditor />
-      <StoryToolbar />
-    </ClientContext.Provider>
+    <>
+      <Head>
+        <title>Story Circle</title>
+      </Head>
+      <ClientContext.Provider
+        value={{
+          newLineContent: newLineContent,
+          setNewLineContent: setNewLineContent,
+        }}
+      >
+        <StoryEditor />
+        <StoryToolbar />
+      </ClientContext.Provider>
+    </>
   );
 };
 
