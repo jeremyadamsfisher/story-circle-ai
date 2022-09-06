@@ -55,7 +55,9 @@ async def send_invitation(
         subtype="html",
     )
 
-    logger.info("inviting {} to {}", invitation.invitee_email, invitation.story.story_uuid)
+    logger.info(
+        "inviting {} to {}", invitation.invitee_email, invitation.story.story_uuid
+    )
 
     background_tasks.add_task(email_client.send_message, msg)
 
