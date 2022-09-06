@@ -20,7 +20,9 @@ export const useStoryUuid = () => {
 export const useStory = () => {
   const storyUuid = useStoryUuid();
   const [user] = useAuthState(auth);
-  const key = `story/${storyUuid}/${user ? "multiPlayer" : "singlePlayer"}`;
+  const key = storyUuid
+    ? `story/${storyUuid}/${user ? "multiPlayer" : "singlePlayer"}`
+    : null;
   const client = useApiClient();
   const {
     data: story,
@@ -31,13 +33,14 @@ export const useStory = () => {
   });
   const addToStoryCallback = useCallback(
     (content: string) => {
+      if (!key) throw new Error("story not intialized");
       const payload: StorySegmentNew = { content: content };
       const promise = client.post(key, { json: payload }).json();
       // TODO: add optimistic update
       mutate();
       return promise;
     },
-    [key, user]
+    [key, user, client]
   );
   return { key, story, addToStoryCallback, error };
 };

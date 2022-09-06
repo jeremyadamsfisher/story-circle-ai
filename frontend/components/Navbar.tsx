@@ -71,7 +71,7 @@ const NavBar: React.FC<INavBar> = ({ returnTo }) => {
                   cursor={"pointer"}
                   minW={0}
                 >
-                  <Avatar size={"md"} name={user!.displayName || ""} />
+                  <Avatar size={"md"} name={user!.email || ""} />
                 </MenuButton>
                 <MenuList>
                   <Center style={{ padding: 10 }}>

@@ -150,6 +150,7 @@ def perform_ai_turn(story_id):
             except (
                 InferenceProblemNotASentence,
                 InferenceProblemEmptyPrediction,
+                InferenceGrammaticalWonkiness,
             ) as e:
                 logger.error(e)
                 continue
@@ -165,9 +166,15 @@ def perform_ai_turn(story_id):
                     ai_generated=True,
                     order=len(story.segments),
                 )
-                story.segments.append(segment)
-                session.add(story)
-                session.commit()
                 break
-        else:
-            raise InferenceProblem("unable to advance story")
+        else:  # if the loop concludes without breaking
+            segment = StorySegment(
+                author=crud.get_ai_player_user(session),
+                story=story,
+                content="And then, something interesting happened.",
+                ai_generated=True,
+                order=len(story.segments),
+            )
+        story.segments.append(segment)
+        session.add(story)
+        session.commit()

@@ -85,7 +85,7 @@ const InvitePlayerForm: React.FC<{
           return;
         }
         toast({
-          title: "invitation sent",
+          title: "Invitation sent",
           description: `${values.email} will be able to create an account and join this game!`,
           status: "success",
           duration: 9000,

@@ -23,6 +23,7 @@
     "react-dom": "^18.0.0",
     "react-firebase-hooks": "^5.0.3",
     "react-icons": "^4.3.1",
+    "react-spinners": "^0.13.4",
     "swr": "^1.2.2"
   },
   "devDependencies": {
