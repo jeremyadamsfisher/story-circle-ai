@@ -54,19 +54,19 @@ export default () => {
       {story.segments.map((segment, i: number) => {
         const lines = segment.content.split("\n");
         return (
-          <>
+          <React.Fragment key={i}>
             {/* new line characters are ignored by HTML engines */}
             {lines.map((line, j: number) => {
               const key = hashString(line + "@" + i + ":" + j);
               const lastLine = j === lines.length - 1;
               return (
-                <>
+                <React.Fragment key={j}>
                   <span key={key}>{line}</span>
                   {!lastLine && <br />}{" "}
-                </>
+                </React.Fragment>
               );
             })}
-          </>
+          </React.Fragment>
         );
       })}
       {isPlayerTurn ? (
