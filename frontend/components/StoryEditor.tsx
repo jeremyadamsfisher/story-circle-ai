@@ -19,6 +19,48 @@ import { BeatLoader } from "react-spinners";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "../lib/auth";
 
+const useGreyBg = () => useColorModeValue("gray.50", "gray.700");
+
+const TurnIndicator: React.FC = () => {
+  const [user] = useAuthState(auth);
+  const { story } = useStory();
+  if (story?.whose_turn_is_it?.ai_player) {
+    return <WaitingForAI />;
+  } else if (
+    // whose_turn_is_it === undefined when performing an optimistic update
+    story?.whose_turn_is_it &&
+    story?.whose_turn_is_it?.name !== user?.email
+  ) {
+    return <WaitingForOtherPlayer playerName={story!.whose_turn_is_it!.name} />;
+  } else {
+    // waiting for server (i.e., whose_turn_is_it === undefined) or player turn
+    return <React.Fragment></React.Fragment>;
+  }
+};
+
+const WaitingForOtherPlayer = ({ playerName }: { playerName: string }) => {
+  const greyBg = useGreyBg();
+  return (
+    <Center>
+      <Box mt={10} p={2} w={"auto"} borderWidth={1} rounded={"md"} bg={greyBg}>
+        <HStack>
+          <Text>Waiting for</Text>
+          <Avatar size={"xs"} name={playerName} />
+        </HStack>
+      </Box>
+    </Center>
+  );
+};
+
+const WaitingForAI: React.FC = () => {
+  const foregroundColor = useColorModeValue("black", "white");
+  return (
+    <span>
+      <BeatLoader size={5} color={foregroundColor} />
+    </span>
+  );
+};
+
 export default () => {
   const [user] = useAuthState(auth);
   const { story, error } = useStory();
@@ -28,8 +70,7 @@ export default () => {
     width: "100%",
     padding: 10,
   };
-  const greyBg = useColorModeValue("gray.50", "gray.700");
-  const foregroundColor = useColorModeValue("black", "white");
+  const greyBg = useGreyBg();
   if (!story)
     return (
       <Center {...outline} background={greyBg}>
@@ -44,10 +85,6 @@ export default () => {
         <AlertDescription>{error.toString()}</AlertDescription>
       </Alert>
     );
-
-  const isPlayerTurn = user
-    ? story.whose_turn_is_it.name === user.email
-    : story.whose_turn_is_it.single_player === true;
 
   return (
     <Box {...outline} textAlign={"center"} background={greyBg}>
@@ -69,29 +106,10 @@ export default () => {
           </React.Fragment>
         );
       })}
-      {isPlayerTurn ? (
-        <StoryNewLineField />
-      ) : story.whose_turn_is_it.ai_player ? (
-        <span>
-          <BeatLoader size={5} color={foregroundColor} />
-        </span>
-      ) : (
-        <Center>
-          <Box
-            mt={10}
-            p={2}
-            w={"auto"}
-            borderWidth={1}
-            rounded={"md"}
-            bg={greyBg}
-          >
-            <HStack>
-              <Text>Waiting for</Text>
-              <Avatar size={"xs"} name={story.whose_turn_is_it.name} />
-            </HStack>
-          </Box>
-        </Center>
-      )}
+
+      {(story.whose_turn_is_it?.single_player ||
+        story.whose_turn_is_it?.name === user?.email) && <StoryNewLineField />}
+      <TurnIndicator />
     </Box>
   );
 };
