@@ -19,7 +19,6 @@ import {
 } from "@chakra-ui/react";
 import { CgLogOut } from "react-icons/cg";
 import { MoonIcon, SunIcon } from "@chakra-ui/icons";
-import { BiBookOpen } from "react-icons/bi";
 import { LogInButton } from "./LogInOutButtons";
 import { signOut } from "firebase/auth";
 import { useAuthState } from "react-firebase-hooks/auth";

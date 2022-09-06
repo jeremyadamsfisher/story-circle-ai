@@ -8,11 +8,9 @@ import {
 import { useStory } from "../lib/story";
 import { useClientContext } from "../pages/story";
 import { InviteButton } from "../components/InviteButton";
-// import { AddIcon } from "@chakra-ui/icons";
-import NextLink from "next/link";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "../lib/auth";
-import { Router, useRouter } from "next/router";
+import { useRouter } from "next/router";
 
 const ToolkitButtonOps = {
   w: { base: "100%", md: "300px" },

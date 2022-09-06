@@ -1,4 +1,4 @@
-import { Button, ButtonProps, Spinner } from "@chakra-ui/react";
+import { Button, ButtonProps } from "@chakra-ui/react";
 import { FaUserCircle } from "react-icons/fa";
 import { auth } from "../lib/auth";
 import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
