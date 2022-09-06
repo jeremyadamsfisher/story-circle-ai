@@ -63,7 +63,7 @@ export default () => {
                 <React.Fragment key={j}>
                   <span key={key}>{line}</span>
                   {!lastLine && <br />}{" "}
-                </>
+                </React.Fragment>
               );
             })}
           </React.Fragment>
