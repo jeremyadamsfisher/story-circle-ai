@@ -39,7 +39,7 @@ const story = () => {
 };
 
 story.getLayout = function getLayout(page: any) {
-  return <Layout returnTo={"/"}>{page}</Layout>;
+  return <Layout>{page}</Layout>;
 };
 
 export default story;

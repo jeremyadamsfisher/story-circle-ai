@@ -27,11 +27,7 @@ import { auth } from "../lib/auth";
 
 const Logo = () => <Heading size={"md"}>Story Circle</Heading>;
 
-interface INavBar {
-  returnTo: string;
-}
-
-const NavBar: React.FC<INavBar> = ({ returnTo }) => {
+const NavBar: React.FC = () => {
   const { colorMode, toggleColorMode } = useColorMode();
   const [user, isLoading, auth0Error] = useAuthState(auth);
 
@@ -91,7 +87,7 @@ const NavBar: React.FC<INavBar> = ({ returnTo }) => {
               </Menu>
             </Flex>
           ) : (
-            <LogInButton returnTo={returnTo} />
+            <LogInButton />
           )}
         </HStack>
       </Flex>

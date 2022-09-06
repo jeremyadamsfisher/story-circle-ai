@@ -45,7 +45,7 @@ export default () => {
           <Text p={[5, 5, 5, 5]}>
             Thanks for joining! We just need to log in to start playing.
           </Text>
-          <LogInButton returnTo="/invitation" />
+          <LogInButton />
         </VStack>
       </Center>
     );
