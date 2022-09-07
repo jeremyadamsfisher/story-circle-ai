@@ -4,27 +4,17 @@ import { useApiClient, schemas } from "./access";
 import { useRouter } from "next/router";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "../lib/auth";
-import { User } from "firebase/auth";
 
 type StoryRead = schemas["StoryRead"];
 type WhoseTurnIsIt = StoryRead["whose_turn_is_it"];
 type StorySegmentNew = schemas["StorySegmentNew"];
 
+// intermediary type for an optimistic update, during it has
+// not been computed yet whose turn it is
 export interface StoryReadOptionalTurn
   extends Omit<StoryRead, "whose_turn_is_it"> {
   whose_turn_is_it?: WhoseTurnIsIt;
 }
-
-export const isUserTurn = (
-  user?: User | null,
-  story?: StoryReadOptionalTurn
-): boolean => {
-  if (!story) return false; // loading
-  if (!story.whose_turn_is_it) return false; // updating game state
-  return user
-    ? story.whose_turn_is_it.name === user.email
-    : story.whose_turn_is_it.single_player;
-};
 
 export const useStoryUuid = () => {
   const { query } = useRouter();

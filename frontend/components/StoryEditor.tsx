@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import {
   Avatar,
   Box,
@@ -18,7 +18,7 @@ import { hashString } from "../lib/utils";
 import { BeatLoader } from "react-spinners";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "../lib/auth";
-import { isUserTurn } from "../lib/story";
+import { isUserTurn } from "../lib/user";
 import { schemas } from "../lib/access";
 
 type StorySegment = schemas["StorySegmentRead"];
