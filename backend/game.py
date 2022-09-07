@@ -113,6 +113,8 @@ def next_segment_prediction(prompt: str) -> str:
         # Regex explanation: find a word, then match few non-word characters until
         # a sentence terminating punctuation is unencoutered. If present,
         # the terminating quotation mark is captured as well.
+        # TODO: the model likes quoted dialog, and it would be nice to be able
+        #       to recover those model outputs
         (text_gen, _) = re.match(r"""\W*(.*?[\.!?](["'])?)""", text_gen).groups()
     except (ValueError, AttributeError):
         raise InferenceProblemNotASentence(f"invalid sentence: {text_gen}")

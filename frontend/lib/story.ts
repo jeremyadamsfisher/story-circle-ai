@@ -9,6 +9,8 @@ type StoryRead = schemas["StoryRead"];
 type WhoseTurnIsIt = StoryRead["whose_turn_is_it"];
 type StorySegmentNew = schemas["StorySegmentNew"];
 
+// intermediary type for an optimistic update, during it has
+// not been computed yet whose turn it is
 export interface StoryReadOptionalTurn
   extends Omit<StoryRead, "whose_turn_is_it"> {
   whose_turn_is_it?: WhoseTurnIsIt;
@@ -35,29 +37,48 @@ export const useStory = () => {
     mutate,
     error,
   } = useSWR(key, (k): Promise<StoryReadOptionalTurn> => client.get(k).json(), {
-    refreshInterval: 1000,
+    refreshInterval: (data) => {
+      const one_sec = 1000;
+      if (!data) {
+        // while the story is being created, check every short interval
+        return one_sec;
+      } else if (data.whose_turn_is_it === undefined) {
+        // while adding to the database (i.e., between turns) do not refresh until
+        // the database updates are complete, which should cause the cache to
+        // revalidate automatically
+        return 0; // 0 implies disabled
+      } else if (data.whose_turn_is_it?.single_player) {
+        // if it is the player turn, no need to refresh
+        return 0;
+      } else if (data.whose_turn_is_it.ai_player) {
+        // the AI player should finish relatively quickly, so refresh quickly
+        return one_sec;
+      }
+      // if it is another players turn, check infrequently
+      return 10 * one_sec;
+    },
   });
   const addToStoryCallback = useCallback(
-    (content: string) => {
+    async (content: string) => {
       if (!key || !story) throw new Error("story not intialized");
       const payload: StorySegmentNew = { content: content };
-      const promise = client.post(key, { json: payload }).json();
-      mutate({
-        ...story,
-        whose_turn_is_it: undefined,
-        segments: [
-          ...story.segments,
-          {
-            content,
-            author: {
-              name: user?.email || "singlePlayer",
-              single_player: user ? true : false,
-              ai_player: false,
+      mutate(client.post(key, { json: payload }).json(), {
+        optimisticData: {
+          ...story,
+          whose_turn_is_it: undefined, // See StoryEditor.TurnIndicator()
+          segments: [
+            ...story.segments,
+            {
+              content,
+              author: {
+                name: user?.email || "singlePlayer",
+                single_player: user ? true : false,
+                ai_player: false,
+              },
             },
-          },
-        ],
+          ],
+        },
       });
-      return promise;
     },
     [key, story, user, client]
   );

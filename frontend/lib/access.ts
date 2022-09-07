@@ -9,7 +9,7 @@ export const useApiClient = () => {
   const [user] = useAuthState(auth);
   return useMemo(() => {
     let apiClient = ky.create({
-      prefixUrl: "/api",
+      prefixUrl: "/api", // see next.config.js
     });
     if (user) {
       apiClient = apiClient.extend({
