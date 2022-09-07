@@ -66,15 +66,9 @@ const NavBar: React.FC = () => {
                   cursor={"pointer"}
                   minW={0}
                 >
-                  <Avatar size={"md"} name={user!.email || ""} />
+                  <Avatar size={"md"} name={user?.email || ""} />
                 </MenuButton>
                 <MenuList>
-                  <Center style={{ padding: 10 }}>
-                    <Avatar
-                      size={"2xl"}
-                      src={user!.photoURL ? user!.photoURL : undefined}
-                    />
-                  </Center>
                   <Center style={{ padding: 10 }}>
                     <p>{user!.email}</p>
                   </Center>
