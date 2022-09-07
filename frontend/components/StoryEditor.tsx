@@ -71,10 +71,6 @@ export default () => {
   const [user] = useAuthState(auth);
   const { story, error } = useStory();
 
-  useEffect(() => {
-    console.log({ user, story });
-  }, [story, user]);
-
   const outline = {
     shadow: "xs",
     borderRadius: 5,
@@ -117,7 +113,11 @@ export default () => {
           </React.Fragment>
         );
       })}
-      {isUserTurn(user, story) ? <StoryNewLineField /> : <TurnIndicator />}
+      {story.whose_turn_is_it !== undefined && isUserTurn(user, story) ? (
+        <StoryNewLineField />
+      ) : (
+        <TurnIndicator />
+      )}
     </Box>
   );
 };
