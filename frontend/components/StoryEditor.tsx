@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Avatar,
   Box,
@@ -18,23 +18,29 @@ import { hashString } from "../lib/utils";
 import { BeatLoader } from "react-spinners";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "../lib/auth";
+import { isUserTurn } from "../lib/story";
+import { schemas } from "../lib/access";
+
+type StorySegment = schemas["StorySegmentRead"];
 
 const useGreyBg = () => useColorModeValue("gray.50", "gray.700");
 
 const TurnIndicator: React.FC = () => {
   const [user] = useAuthState(auth);
   const { story } = useStory();
-  if (story?.whose_turn_is_it?.ai_player) {
-    return <WaitingForAI />;
-  } else if (
-    // whose_turn_is_it === undefined when performing an optimistic update
-    story?.whose_turn_is_it &&
-    story?.whose_turn_is_it?.name !== user?.email
-  ) {
-    return <WaitingForOtherPlayer playerName={story!.whose_turn_is_it!.name} />;
-  } else {
-    // waiting for server (i.e., whose_turn_is_it === undefined) or player turn
+
+  if (!story || story?.whose_turn_is_it === undefined) {
+    // loading story or waiting for server to update
     return <React.Fragment></React.Fragment>;
+  } else if (story?.whose_turn_is_it?.ai_player) {
+    return <WaitingForAI />;
+  } else {
+    if (!isUserTurn(user, story)) {
+      return <WaitingForOtherPlayer playerName={story.whose_turn_is_it.name} />;
+    } else {
+      // If it is single player, display nothing
+      return <React.Fragment></React.Fragment>;
+    }
   }
 };
 
@@ -64,6 +70,11 @@ const WaitingForAI: React.FC = () => {
 export default () => {
   const [user] = useAuthState(auth);
   const { story, error } = useStory();
+
+  useEffect(() => {
+    console.log({ user, story });
+  }, [story, user]);
+
   const outline = {
     shadow: "xs",
     borderRadius: 5,
@@ -88,7 +99,7 @@ export default () => {
 
   return (
     <Box {...outline} textAlign={"center"} background={greyBg}>
-      {story.segments.map((segment, i: number) => {
+      {story.segments.map((segment: StorySegment, i: number) => {
         const lines = segment.content.split("\n");
         return (
           <React.Fragment key={i}>
@@ -106,10 +117,7 @@ export default () => {
           </React.Fragment>
         );
       })}
-
-      {(story.whose_turn_is_it?.single_player ||
-        story.whose_turn_is_it?.name === user?.email) && <StoryNewLineField />}
-      <TurnIndicator />
+      {isUserTurn(user, story) ? <StoryNewLineField /> : <TurnIndicator />}
     </Box>
   );
 };
