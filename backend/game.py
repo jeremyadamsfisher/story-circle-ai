@@ -2,8 +2,8 @@ import os
 import random
 import re
 import string
-from telnetlib import DO
 import time
+from telnetlib import DO
 
 import requests
 from loguru import logger
@@ -33,14 +33,18 @@ DOCSTRING_ARGS = """
 
 def text_generator_testing(prompt, model_id_override=None):
     r"""Generate a simple story continuation for quick tests.
-    {}""".format(DOCSTRING_ARGS)
+    {}""".format(
+        DOCSTRING_ARGS
+    )
     EXAMPLE = "So we beat on, boats against the current, borne back ceaselessly into the past."
     return [{"generated_text": prompt + EXAMPLE}]
 
 
 def text_generator_hosted(prompt, model_id_override=None):
     r"""Generate text using 🤗 inference
-    {}""".format(DOCSTRING_ARGS)
+    {}""".format(
+        DOCSTRING_ARGS
+    )
     api_token = os.environ["HUGGINGFACE_API_TOKEN"]
     model_id = model_id_override if model_id_override else MODEL_ID
     r = requests.post(
@@ -54,7 +58,9 @@ def text_generator_hosted(prompt, model_id_override=None):
 
 def text_generator_local(prompt, model_id_override=None):
     r"""Generate text using 🤗 pipelines
-    {}""".format(DOCSTRING_ARGS)
+    {}""".format(
+        DOCSTRING_ARGS
+    )
     from transformers import pipeline
 
     model_id = model_id_override if model_id_override else MODEL_ID
@@ -168,7 +174,9 @@ def perform_ai_turn(story_id):
         model_id = None
         for _ in range(N_FAILURES_ALLOWED):
             try:
-                next_segment_content = next_segment_prediction(prompt, model_id_override=model_id)
+                next_segment_content = next_segment_prediction(
+                    prompt, model_id_override=model_id
+                )
             except (
                 InferenceProblemNotASentence,
                 InferenceProblemEmptyPrediction,
