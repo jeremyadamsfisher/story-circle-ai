@@ -2,6 +2,7 @@ import os
 import random
 import re
 import string
+from telnetlib import DO
 import time
 
 import requests
@@ -16,19 +17,34 @@ N_FAILURES_ALLOWED = 10
 MAX_PROMPT_LENGTH = 50
 WORDS_THAT_CAN_HAVE_A_PERIOD = ["mr" "ms" "mrs" "jr" "sr"]
 MODEL_ID = "gpt2-large"
+ALT_MODEL_IDS = ["gpt2", "EleutherAI/gpt-j-6B", "EleutherAI/gpt-neo-125M"]
+
 
 SENTENCE_STARTERS = ["Then, ", "Suddenly, ", "And then, ", "So, ", "Granted, "]
 
+DOCSTRING_ARGS = """
+    Args:
+        model_id_override (str, optional): if present, use instead
 
-def text_generator_testing(prompt):
+    Returns:
+        List[Dict[str, str]]: generated output
+    """
+
+
+def text_generator_testing(prompt, model_id_override=None):
+    r"""Generate a simple story continuation for quick tests.
+    {}""".format(DOCSTRING_ARGS)
     EXAMPLE = "So we beat on, boats against the current, borne back ceaselessly into the past."
     return [{"generated_text": prompt + EXAMPLE}]
 
 
-def text_generator_hosted(prompt):
+def text_generator_hosted(prompt, model_id_override=None):
+    r"""Generate text using 🤗 inference
+    {}""".format(DOCSTRING_ARGS)
     api_token = os.environ["HUGGINGFACE_API_TOKEN"]
+    model_id = model_id_override if model_id_override else MODEL_ID
     r = requests.post(
-        f"https://api-inference.huggingface.co/models/{MODEL_ID}",
+        f"https://api-inference.huggingface.co/models/{model_id}",
         headers={"Authorization": f"Bearer {api_token}"},
         json={"inputs": prompt, "use_cache": False},
     )
@@ -36,10 +52,13 @@ def text_generator_hosted(prompt):
     return r.json()
 
 
-def text_generator_local(prompt):
+def text_generator_local(prompt, model_id_override=None):
+    r"""Generate text using 🤗 pipelines
+    {}""".format(DOCSTRING_ARGS)
     from transformers import pipeline
 
-    return pipeline("text-generation", MODEL_ID)(prompt)
+    model_id = model_id_override if model_id_override else MODEL_ID
+    return pipeline("text-generation", model_id)(prompt)
 
 
 text_generator = {
@@ -80,11 +99,11 @@ def check_for_imbalance(text: str) -> bool:
     return True
 
 
-def next_segment_prediction(prompt: str) -> str:
+def next_segment_prediction(prompt: str, model_id_override=None) -> str:
     starter = "" if 0.0 <= random.random() < 0.05 else random.choice(SENTENCE_STARTERS)
     prompt = prompt.strip()
     prompt_full = (prompt + " " + starter)[-MAX_PROMPT_LENGTH:]
-    (res,) = text_generator(prompt_full)
+    (res,) = text_generator(prompt_full, model_id_override)
     text_gen_raw = res["generated_text"]
     text_gen = starter + text_gen_raw[len(prompt_full) :]
     text_gen = (
@@ -146,9 +165,10 @@ def perform_ai_turn(story_id):
         except crud.DbNotFound:
             raise crud.DbIssue(f"could not find {story_id}")
         prompt = " ".join([s.content for s in story.segments])
+        model_id = None
         for _ in range(N_FAILURES_ALLOWED):
             try:
-                next_segment_content = next_segment_prediction(prompt)
+                next_segment_content = next_segment_prediction(prompt, model_id_override=model_id)
             except (
                 InferenceProblemNotASentence,
                 InferenceProblemEmptyPrediction,
@@ -156,7 +176,10 @@ def perform_ai_turn(story_id):
             ) as e:
                 logger.error(e)
                 continue
-            except requests.exceptions.HTTPError:
+            except requests.exceptions.HTTPError as e:
+                if 500 <= e.response.status_code <= 599:
+                    # sometimes, there is an error with a particular model
+                    model_id = random.choice(ALT_MODEL_IDS)
                 logger.error(e)
                 time.sleep(2)
                 continue
