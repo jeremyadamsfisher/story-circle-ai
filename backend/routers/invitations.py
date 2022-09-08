@@ -51,7 +51,7 @@ async def send_invitation(
     msg = MessageSchema(
         subject=INVITE_SUBJECT,
         recipients=[invitation.invitee_email],
-        body=INVITE_HTML.format(story_url),
+        html=INVITE_HTML.format(story_url),
         subtype="html",
     )
 
