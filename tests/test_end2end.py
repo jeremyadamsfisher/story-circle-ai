@@ -64,9 +64,9 @@ def send_invite(
         return email, invitation_id
 
 
-def respond_to_invite(client, invitation_id):
+def respond_to_invite(client, invitation_id, expected_status_code=200):
     r = client.post(f"/invitations/respond/{invitation_id}")
-    assert r.status_code == 200
+    assert r.status_code == expected_status_code
 
 
 def decode_email_payload(email: MIMEMultipart) -> str:
@@ -284,3 +284,13 @@ def test_user_cannot_invite_same_person_twice(context):
         send_invite(
             context.client, story_uuid, email_address=P2, expected_status_code=403
         )
+
+
+def test_user_cannot_respond_to_invitation_for_someone_else(context):
+    with context.active_user(P1):
+        story_uuid = create_story(context.client, "multi")
+        _, invite_id = send_invite(
+            context.client, story_uuid, email_address=P2, expected_status_code=200
+        )
+    with context.active_user(P3):
+        respond_to_invite(context.client, invite_id, expected_status_code=422)
