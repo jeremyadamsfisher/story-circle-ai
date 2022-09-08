@@ -1,3 +1,11 @@
 steps:
   - name: "gcr.io/cloud-builders/gcloud"
-    args: ["app", "deploy"]
+    entrypoint: "bash"
+    args: ["./cloudbuild.sh"]
+    secretEnv: ["HUGGINGFACE_API_TOKEN", "MAIL_PASSWORD"]
+availableSecrets:
+  secretManager:
+    - versionName: projects/941991975458/secrets/HUGGINGFACE_API_TOKEN/versions/1
+      env: HUGGINGFACE_API_TOKEN
+    - versionName: projects/941991975458/secrets/MAIL_PASSWORD/versions/1
+      env: MAIL_PASSWORD
