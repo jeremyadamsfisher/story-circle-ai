@@ -30,6 +30,11 @@ async def send_invitation(
     background_tasks: BackgroundTasks,
     model: InvitationNew,
 ):
+    try:
+        story = crud.get_story(model.story_uuid, session)
+    except crud.DbNotFound:
+        raise HTTPException(404, "story to which user is inviting not found")
+
     if not any(
         story.story_uuid == model.story_uuid for story in user.stories_originated
     ):
@@ -39,6 +44,11 @@ async def send_invitation(
         )
         raise HTTPException(
             403, "can only invite other users to stories user originated"
+        )
+
+    if any(model.invitee_email == player.name for player in story.players):
+        raise HTTPException(
+            403, "cannot invite a player that has already accepted an invitation"
         )
 
     invitation = crud.add_invitation(model, session)
@@ -64,7 +74,7 @@ async def send_invitation(
     return invitation
 
 
-@router.get("/respond/{invitation_id}", response_model=InvitationRead)
+@router.post("/respond/{invitation_id}", response_model=InvitationRead)
 def respond_to_invitation(
     *,
     invitation_id: int,
@@ -76,9 +86,12 @@ def respond_to_invitation(
         raise HTTPException(404, "invitation not found")
     if invitation.invitee_email != user.name:
         logger.warning(
-            "{} attempted to respond to invitation for",
+            "{} attempted to respond to invitation for {}",
             invitation.invitee_email,
             user.name,
         )
         raise HTTPException(422, "invitation email does not match the JWT email")
+    if invitation.responded:
+        raise HTTPException(409, "invitation has already been redeemed")
+
     return crud.respond_to_invitation(invitation, user, session)
