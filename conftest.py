@@ -1,5 +1,6 @@
 import contextlib
 import os
+from dataclasses import dataclass
 
 import pytest
 from fastapi.testclient import TestClient
@@ -19,11 +20,18 @@ from backend.db import get_session
 from backend.lib.email import email_client
 from backend.main import app
 from backend.models import *
-from backend.routers import invitations, story
+from backend.routers import story
 
 SQLALCHEMY_DATABASE_URL = "sqlite://"
 
 EXAMPLE_USER_EMAILS = [f"player{i}@foo.com" for i in range(1, 3)]
+
+
+@dataclass
+class Context:
+    client: TestClient
+    session: Session
+    active_user: Optional[str]
 
 
 class NeedToSetAUser(Exception):
@@ -46,7 +54,7 @@ def session_fixture():
 
 
 @pytest.fixture
-def client_context(session: Session, monkeypatch):
+def context(session: Session, monkeypatch):
     os.environ["APP_ORIGIN"] = "http://localhost"
 
     os.environ["SUPPRESS_EMAIL"] = "1"
@@ -91,11 +99,10 @@ def client_context(session: Session, monkeypatch):
     app.dependency_overrides[get_user_from_request] = get_user_override
 
     client = TestClient(app)
-    yield client, session, active_user
+    yield Context(client=client, session=session, active_user=active_user)
     app.dependency_overrides.clear()
 
 
 @pytest.fixture
-def client(client_context):
-    client_, *_ = client_context
-    return client_
+def client(context):
+    return context.client

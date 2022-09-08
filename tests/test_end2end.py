@@ -4,7 +4,6 @@ import uuid
 from email.mime.multipart import MIMEMultipart
 from typing import Optional, Tuple
 
-import pytest
 from bs4 import BeautifulSoup
 
 from backend import crud
@@ -130,143 +129,136 @@ def test_single_player_can_add_to_story(client):
     assert segments == [s1, "foo", s2, "foo"]
 
 
-def test_invitation_contains_invitation_id(client_context):
+def test_invitation_contains_invitation_id(context):
     """
     User creates a story and invites another player. Ensure email
     contains relevant information
     """
-    client, _, active_user = client_context
 
-    with active_user(P1):
-        story_uuid = create_story(client, "multi")
-        email, invitation_id = send_invite(client, story_uuid, email_address=P2)
+    with context.active_user(P1):
+        story_uuid = create_story(context.client, "multi")
+        email, invitation_id = send_invite(context.client, story_uuid, email_address=P2)
         payload = decode_email_payload(email)
         invitation_url = extract_invite_url_from_email_payload(payload)
         assert email["to"] == P2
         assert str(invitation_id) == invitation_url[-len(str(invitation_id)) :]
 
 
-def test_invited_player_can_add_to_story(client_context):
+def test_invited_player_can_add_to_story(context):
     """
     User starts a story and invites another player, allowing
     them to add to the story at the apropriate time
     """
-    client, session, active_user = client_context
+    with context.active_user(P1):
+        story_uuid = create_story(context.client, "multi")
+        add_to_story(context.client, story_uuid, "foo", "multi")
+        _, invite_id = send_invite(context.client, story_uuid, email_address=P2)
 
-    with active_user(P1):
-        story_uuid = create_story(client, "multi")
-        add_to_story(client, story_uuid, "foo", "multi")
-        _, invite_id = send_invite(client, story_uuid, email_address=P2)
+    with context.active_user(P2):
+        respond_to_invite(context.client, invite_id)
+        add_to_story(context.client, story_uuid, "bar", "multi")
 
-    with active_user(P2):
-        respond_to_invite(client, invite_id)
-        add_to_story(client, story_uuid, "bar", "multi")
-
-    story = crud.get_story(story_uuid, session)
+    story = crud.get_story(story_uuid, context.session)
     assert [s.content for s in story.segments] == ["foo", "foo", "bar"]
 
 
-def test_user_cannot_interfere_when_its_not_their_turn(client_context):
+def test_user_cannot_interfere_when_its_not_their_turn(context):
     """
     User is rebuffed when trying to interfere with the story when it
     is not their turn
     """
+    with context.active_user(P1):
+        story_uuid = create_story(context.client, "multi")
+        add_to_story(context.client, story_uuid, "foo", "multi")
+        _, invite_id = send_invite(context.client, story_uuid, email_address=P2)
 
-    client, _, active_user = client_context
+    with context.active_user(P2):
+        respond_to_invite(context.client, invite_id)
 
-    with active_user(P1):
-        story_uuid = create_story(client, "multi")
-        add_to_story(client, story_uuid, "foo", "multi")
-        _, invite_id = send_invite(client, story_uuid, email_address=P2)
-
-    with active_user(P2):
-        respond_to_invite(client, invite_id)
-
-    with active_user(P1):
+    with context.active_user(P1):
         # Here, the user tries to add to the story again __before__ the new player
         # has a chance to add anything
-        add_to_story(client, story_uuid, "foo", "multi", expected_status_code=403)
+        add_to_story(
+            context.client, story_uuid, "foo", "multi", expected_status_code=403
+        )
 
 
-def test_can_only_add_after_invited(client_context):
+def test_can_only_add_after_invited(context):
     """
     Another player tries to hijack a story, but is rebuffed and can
     only add when it is their turn
     """
-    client, _, active_user = client_context
-
     # First, player 1 creates a story
 
-    with active_user(P1):
-        story_uuid = create_story(client, "multi")
+    with context.active_user(P1):
+        story_uuid = create_story(context.client, "multi")
 
     # Player 2 maliciously tries to add to the story when its not
     # their turn and before they are invited
 
-    with active_user(P2):
-        add_to_story(client, story_uuid, "foo", "multi", expected_status_code=403)
+    with context.active_user(P2):
+        add_to_story(
+            context.client, story_uuid, "foo", "multi", expected_status_code=403
+        )
 
     # Player 1 takes their legal turn, followed by the AI
 
-    with active_user(P1):
-        add_to_story(client, story_uuid, "foo", "multi")
-        _, invite_id = send_invite(client, story_uuid, email_address=P2)
+    with context.active_user(P1):
+        add_to_story(context.client, story_uuid, "foo", "multi")
+        _, invite_id = send_invite(context.client, story_uuid, email_address=P2)
 
     # Now player 2 can take their turn legally
 
-    with active_user(P2):
-        respond_to_invite(client, invite_id)
-        add_to_story(client, story_uuid, "foo", "multi", expected_status_code=200)
+    with context.active_user(P2):
+        respond_to_invite(context.client, invite_id)
+        add_to_story(
+            context.client, story_uuid, "foo", "multi", expected_status_code=200
+        )
 
 
-def test_only_original_author_can_invite_people(client_context):
-    client, _, active_user = client_context
+def test_only_original_author_can_invite_people(context):
+    with context.active_user(P1):
+        story_uuid = create_story(context.client, "multi")
 
-    with active_user(P1):
-        story_uuid = create_story(client, "multi")
+    with context.active_user(P2):
+        send_invite(
+            context.client, story_uuid, email_address=P3, expected_status_code=403
+        )
 
-    with active_user(P2):
-        send_invite(client, story_uuid, email_address=P3, expected_status_code=403)
 
+def test_viewing_a_single_player_game_logged_in_converts_to_multiplayer(context):
+    story_uuid = create_story(context.client, "single")
 
-def test_viewing_a_single_player_game_logged_in_converts_to_multiplayer(client_context):
-    client, session, active_user = client_context
-
-    story_uuid = create_story(client, "single")
-
-    story = crud.get_story(story_uuid, session)
+    story = crud.get_story(story_uuid, context.session)
     assert story.single_player_mode is True
 
-    with active_user(P1):
-        get_story_status(client, story_uuid, "multi")
+    with context.active_user(P1):
+        get_story_status(context.client, story_uuid, "multi")
 
-    story = crud.get_story(story_uuid, session)
+    story = crud.get_story(story_uuid, context.session)
     assert story.original_author.name == P1
     assert story.player_ordering[0].user.name == P1
     assert story.single_player_mode is False
 
 
-def test_cannot_add_to_owned_story_if_single_player(client_context):
-    client, _, active_user = client_context
-    with active_user(P1):
-        story_uuid = create_story(client, "multi")
-    add_to_story(client, story_uuid, "foo", "single", expected_status_code=403)
+def test_cannot_add_to_owned_story_if_single_player(context):
+    with context.active_user(P1):
+        story_uuid = create_story(context.client, "multi")
+    add_to_story(context.client, story_uuid, "foo", "single", expected_status_code=403)
 
 
-def test_user_can_start_a_story_and_continue_logged_in(client_context):
-    client, session, active_user = client_context
-
-    story_uuid = create_story(client, "single")
-    story = crud.get_story(story_uuid, session)
+def test_user_can_start_a_story_and_continue_logged_in(context):
+    story_uuid = create_story(context.client, "single")
+    story = crud.get_story(story_uuid, context.session)
     assert story.original_author.name == "single-player"
     assert story.single_player_mode is True
 
     SAMPLE = "foo"
 
-    with active_user(P1):
-        add_to_story(client, story_uuid, SAMPLE, "multi")
+    with context.active_user(P1):
+        add_to_story(context.client, story_uuid, SAMPLE, "multi")
 
-    story = crud.get_story(story_uuid, session)
+    story = crud.get_story(story_uuid, context.session)
     assert story.original_author.name == P1
     assert story.player_ordering[0].user.name == P1
     assert story.single_player_mode is False
