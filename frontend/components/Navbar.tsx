@@ -16,6 +16,7 @@ import {
   useColorMode,
   useColorModeValue,
   Heading,
+  Image,
 } from "@chakra-ui/react";
 import { CgLogOut } from "react-icons/cg";
 import { MoonIcon, SunIcon } from "@chakra-ui/icons";
@@ -23,8 +24,14 @@ import { LogInButton } from "./LogInOutButtons";
 import { signOut } from "firebase/auth";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "../lib/auth";
+import logo from "../logo.png";
 
-const Logo = () => <Heading size={"md"}>Story Circle</Heading>;
+const Logo = () => (
+  <HStack>
+    <Image w={55} src={logo.src} alt="Story Circle Logo" />
+    <Heading size={"md"}>Story Circle</Heading>;
+  </HStack>
+);
 
 const NavBar: React.FC = () => {
   const { colorMode, toggleColorMode } = useColorMode();
