@@ -33,10 +33,10 @@ DOCSTRING_ARGS = """
 
 def text_gen(f):
     def inner(*args, **kwargs):
-        res, = f(*args, **kwargs)
+        (res,) = f(*args, **kwargs)
         return res["generated_text"]
+
     return inner
-    
 
 
 @text_gen
