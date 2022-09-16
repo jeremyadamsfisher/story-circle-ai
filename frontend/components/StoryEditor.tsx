@@ -29,11 +29,13 @@ const TurnIndicator: React.FC = () => {
   const [user] = useAuthState(auth);
   const { story } = useStory();
 
-  if (!story || story?.whose_turn_is_it === undefined) {
-    // loading story or waiting for server to update
-    return <React.Fragment></React.Fragment>;
-  } else if (story?.whose_turn_is_it?.ai_player) {
-    return <WaitingForAI />;
+  if (
+    !story ||
+    story?.whose_turn_is_it === undefined ||
+    story?.whose_turn_is_it?.ai_player
+  ) {
+    // loading story, waiting for AI or waiting for server to update
+    return <WaitingForServerAction />;
   } else {
     if (!isUserTurn(user, story)) {
       return <WaitingForOtherPlayer playerName={story.whose_turn_is_it.name} />;
@@ -58,7 +60,7 @@ const WaitingForOtherPlayer = ({ playerName }: { playerName: string }) => {
   );
 };
 
-const WaitingForAI: React.FC = () => {
+const WaitingForServerAction: React.FC = () => {
   const foregroundColor = useColorModeValue("black", "white");
   return (
     <span>

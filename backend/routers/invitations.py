@@ -15,9 +15,9 @@ from ..models import Invitation, InvitationNew, InvitationRead
 
 router = APIRouter()
 
-INVITE_SUBJECT = "You've been invited to contribute to an AI story!"
+INVITE_SUBJECT = "{} invited to contribute to an AI story!"
 INVITE_HTML = """<div>
-    <span>You've been invited to work on a story with AI agents!</span>
+    <span>{} invited you to work on a story with AI agents!</span>
     <a id="email-link" href="{}">Click here!</a>
 </div>"""
 
@@ -59,9 +59,9 @@ async def send_invitation(
     )
 
     msg = MessageSchema(
-        subject=INVITE_SUBJECT,
+        subject=INVITE_SUBJECT.format(user.name),
         recipients=[invitation.invitee_email],
-        html=INVITE_HTML.format(story_url),
+        html=INVITE_HTML.format(user.name, story_url),
         subtype="html",
     )
 
