@@ -3,6 +3,7 @@ import StoryToolbar from "../components/StoryToolbar";
 import StoryEditor from "../components/StoryEditor";
 import Layout from "../components/layout";
 import Head from "next/head";
+import { useNotifyStoryChanges } from "../lib/story";
 
 //@ts-ignore
 const ClientContext = createContext<{
@@ -19,6 +20,7 @@ export const useClientContext = () => {
 };
 
 const story = () => {
+  useNotifyStoryChanges();
   const [newLineContent, setNewLineContent] = useState("");
   return (
     <>
