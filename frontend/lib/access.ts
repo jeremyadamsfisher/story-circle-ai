@@ -4,12 +4,17 @@ import { auth } from "./auth";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { getIdToken } from "firebase/auth";
 import { useMemo } from "react";
+import getConfig from "next/config";
 
 export const useApiClient = () => {
   const [user] = useAuthState(auth);
+  const {
+    publicRuntimeConfig: { BACKEND_URL },
+  } = getConfig();
+
   return useMemo(() => {
     let apiClient = ky.create({
-      prefixUrl: "/api", // see next.config.js
+      prefixUrl: BACKEND_URL, // see next.config.js
     });
     if (user) {
       apiClient = apiClient.extend({
