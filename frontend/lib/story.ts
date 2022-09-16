@@ -98,6 +98,9 @@ export const useNotifyStoryChanges = () => {
   >();
   const { story } = useStory();
   useEffect(() => {
+    // browser notifications not supported
+    if (!("Notification" in window)) return;
+
     // loading game
     if (!story) return;
 
