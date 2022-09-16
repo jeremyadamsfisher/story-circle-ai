@@ -1,10 +1,11 @@
 import os
 import random
 import re
-import string
 import time
 
 import requests
+import spacy
+import unidecode
 from loguru import logger
 from sqlmodel import Session
 
@@ -12,14 +13,14 @@ from . import crud
 from .db import get_engine
 from .models import StorySegment
 
+logger.info("loading spacy...")
+nlp = spacy.load("en_core_web_sm")
+logger.info("...done loading spacy")
+
 N_FAILURES_ALLOWED = 10
-MAX_PROMPT_LENGTH = 50
 WORDS_THAT_CAN_HAVE_A_PERIOD = ["mr" "ms" "mrs" "jr" "sr"]
 MODEL_ID = "EleutherAI/gpt-j-6B"
 ALT_MODEL_IDS = ["gpt2", "gpt2-large", "EleutherAI/gpt-neo-125M"]
-
-
-SENTENCE_STARTERS = ["Then, ", "Suddenly, ", "And then, ", "So, ", "Granted, "]
 
 DOCSTRING_ARGS = """
     Args:
@@ -30,6 +31,15 @@ DOCSTRING_ARGS = """
     """
 
 
+def text_gen(f):
+    def inner(*args, **kwargs):
+        (res,) = f(*args, **kwargs)
+        return res["generated_text"]
+
+    return inner
+
+
+@text_gen
 def text_generator_testing(prompt, model_id_override=None):
     r"""Generate a simple story continuation for quick tests.
     {}""".format(
@@ -39,6 +49,7 @@ def text_generator_testing(prompt, model_id_override=None):
     return [{"generated_text": prompt + EXAMPLE}]
 
 
+@text_gen
 def text_generator_hosted(prompt, model_id_override=None):
     r"""Generate text using 🤗 inference
     {}""".format(
@@ -49,12 +60,22 @@ def text_generator_hosted(prompt, model_id_override=None):
     r = requests.post(
         f"https://api-inference.huggingface.co/models/{model_id}",
         headers={"Authorization": f"Bearer {api_token}"},
-        json={"inputs": prompt, "use_cache": False},
+        json={
+            "inputs": prompt,
+            "parameters": {
+                "temperature": 1.1,
+                "max_new_tokens": 50,
+            },
+            "options": {
+                "use_cache": False,
+            },
+        },
     )
     r.raise_for_status()
     return r.json()
 
 
+@text_gen
 def text_generator_local(prompt, model_id_override=None):
     r"""Generate text using 🤗 pipelines
     {}""".format(
@@ -89,12 +110,12 @@ class InferenceGrammaticalWonkiness(Exception):
     ...
 
 
-def check_for_imbalance(text: str) -> bool:
+def is_balanced(text: str) -> bool:
     """Make sure there is no imbalanced punctuation
 
     Example:
-        >>> assert check_for_imbalance('Steve said, "Woah."') is True
-        >>> assert check_for_imbalance('Then Fabiola said, "This is great.') is False
+        >>> assert is_balanced('Steve said, "Woah."') is True
+        >>> assert is_balanced('Then Fabiola said, "This is great.') is False
     """
     for open_, close in ["''", '""', "()", "[]", "<>"]:
         if open_ == close and text.count(open_) % 2 != 0:
@@ -105,58 +126,49 @@ def check_for_imbalance(text: str) -> bool:
 
 
 def next_segment_prediction(prompt: str, model_id_override=None) -> str:
-    starter = "" if 0.0 <= random.random() < 0.05 else random.choice(SENTENCE_STARTERS)
-    prompt = prompt.strip()
-    prompt_full = (prompt + " " + starter)[-MAX_PROMPT_LENGTH:]
-    (res,) = text_generator(prompt_full, model_id_override)
-    text_gen_raw = res["generated_text"]
-    text_gen = starter + text_gen_raw[len(prompt_full) :]
-    text_gen = (
-        "".join(c for c in text_gen if c in string.printable)
-        .replace("\n", " ")
-        # aesthetically and narratively, I find it more pleasing to collapse these dots
-        .replace("…", ".")
-        .replace("...", ".")
+    prompt = (
+        # Try to sample from high-quality/literary/SFW, parts of the distribution
+        "This is a excerpt from a well-written, hilarious, audacious, "
+        "lyrical, poetic, profound, high-quality, age-apropriate, young "
+        "adult novel:"
+        "\n\n"
+        # Indicate a change in style, i.e.: "Start the story here" -> previous segment -> new segment
+        "Chapter 1:"
+        "\n\n"
+        "{}".format(prompt.strip() + " ")
     )
+    prompt = unidecode.unidecode(prompt)
+
+    text_gen = text_generator(prompt, model_id_override)
+    text_gen = text_gen[len(prompt) :]
+    text_gen = unidecode.unidecode(text_gen)
+
+    # Fix white-space wonkiness
     while "  " in text_gen:
         text_gen = text_gen.replace("  ", " ")
 
-    logger.info(
-        "\n"
-        "STARTER:         {}\n"
-        "PROMPT:          {}\n"
-        "TEXT GEN'D:      {}\n"
-        "TEXT CLEANED UP: {}",
-        starter,
-        prompt,
-        text_gen_raw,
-        text_gen,
-    )
+    # Remove partial sentences
+    doc = nlp(text_gen)
+    sents = []
+    for sent in doc.sents:
+        sent = sent.text.strip()
+        # sentence ends with a punctuation mark, or a punctuation mark followed by a quotation mark
+        valid_sentence_pattern = r"""^.*[\.!]|([\.!]["'])?$"""
+        if re.match(valid_sentence_pattern, sent) and is_balanced(sent):
+            sents.append(sent)
+        else:
+            break
+    text_gen = " ".join(sents)
 
-    try:
-        # Regex explanation: find a word, then match few non-word characters until
-        # a sentence terminating punctuation is unencoutered. If present,
-        # the terminating quotation mark is captured as well.
-        # TODO: the model likes quoted dialog, and it would be nice to be able
-        #       to recover those model outputs
-        (text_gen, _) = re.match(r"""\W*(.*?[\.!?](["'])?)""", text_gen).groups()
-    except (ValueError, AttributeError):
-        raise InferenceProblemNotASentence(f"invalid sentence: {text_gen}")
-    if len(text_gen) == 0:
+    if len(text_gen) < 10:
         raise InferenceProblemEmptyPrediction(
-            f"unable to generate from prompt: {prompt_full}\n"
-            f"generated text: {text_gen_raw}"
+            f"generated text is too short from prompt: `{prompt}` generated text: `{text_gen}`"
         )
-    elif len(text_gen) < 10:
-        raise InferenceProblemEmptyPrediction(
-            f"generated text is too short from prompt: {prompt_full}\n"
-            f"generated text: {text_gen_raw}"
-        )
-    elif check_for_imbalance(text_gen) is False:
+    elif not is_balanced(text_gen):
         raise InferenceGrammaticalWonkiness(
-            f"generated text is grammatically weird: {prompt_full}\n"
-            f"generated text: {text_gen_raw}"
+            f"generated text is grammatically weird: `{prompt}`, generated text: `{text_gen}`"
         )
+
     return text_gen
 
 
@@ -184,7 +196,7 @@ def perform_ai_turn(story_id):
                 logger.error(e)
                 continue
             except requests.exceptions.HTTPError as e:
-                if 500 <= e.response.status_code <= 599:
+                if e.response.status_code == 503:
                     # sometimes, there is an error with a particular model
                     model_id = random.choice(ALT_MODEL_IDS)
                 logger.error(e)
