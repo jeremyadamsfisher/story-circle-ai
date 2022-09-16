@@ -8,4 +8,4 @@ RUN python -m spacy download en_core_web_sm
 
 COPY backend backend
 
-CMD gunicorn --workers 1 --threads 8 --bind :8080 backend.main:app
+CMD gunicorn backend.main:app  --bind 0.0.0.0:$PORT --worker-class uvicorn.workers.UvicornWorker 
