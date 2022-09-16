@@ -1,4 +1,0 @@
-runtime: python310
-entrypoint: gunicorn -w 4 -k uvicorn.workers.UvicornWorker backend.main:app
-instance_class: F2
-service_account: story-circle-app-sa@story-circle-ai.iam.gserviceaccount.com
