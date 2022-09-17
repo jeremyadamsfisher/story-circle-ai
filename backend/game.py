@@ -147,26 +147,23 @@ def next_segment_prediction(prompt: str, model_id_override=None) -> str:
     while "  " in text_gen:
         text_gen = text_gen.replace("  ", " ")
 
-    # Remove partial sentences
+    # Remove partial sentences, pick the first 
     doc = nlp(text_gen)
-    sents = []
     for sent in doc.sents:
         sent = sent.text.strip()
         # sentence ends with a punctuation mark, or a punctuation mark followed by a quotation mark
         valid_sentence_pattern = r"""^.*[\.!]|([\.!]["'])?$"""
         if re.match(valid_sentence_pattern, sent) and is_balanced(sent):
-            sents.append(sent)
-        else:
+            text_gen = sent
             break
-    text_gen = " ".join(sents)
+    else:
+        raise InferenceGrammaticalWonkiness(
+            f"generated text is grammatically weird: `{prompt}`, generated text: `{text_gen}`"
+        )
 
     if len(text_gen) < 10:
         raise InferenceProblemEmptyPrediction(
             f"generated text is too short from prompt: `{prompt}` generated text: `{text_gen}`"
-        )
-    elif not is_balanced(text_gen):
-        raise InferenceGrammaticalWonkiness(
-            f"generated text is grammatically weird: `{prompt}`, generated text: `{text_gen}`"
         )
 
     return text_gen
