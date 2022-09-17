@@ -147,7 +147,7 @@ def next_segment_prediction(prompt: str, model_id_override=None) -> str:
     while "  " in text_gen:
         text_gen = text_gen.replace("  ", " ")
 
-    # Remove partial sentences, pick the first 
+    # Remove partial sentences, pick the first
     doc = nlp(text_gen)
     for sent in doc.sents:
         sent = sent.text.strip()

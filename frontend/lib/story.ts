@@ -101,6 +101,8 @@ export const useNotifyStoryChanges = () => {
     // browser notifications not supported
     if (!("Notification" in window)) return;
 
+    if (Notification.permission === "denied") return;
+
     // loading game
     if (!story) return;
 
