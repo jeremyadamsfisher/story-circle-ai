@@ -1,5 +1,9 @@
 # Storytelling with AI collaborators
 
+![screenshot](docs/screenshot.png)
+
+[Play it now!](https://storycircle.lol)
+
 ## Bootstrap
 
 - Run Terraform
