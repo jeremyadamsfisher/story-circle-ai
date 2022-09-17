@@ -12,6 +12,7 @@ from ..db import get_session
 from ..lib.email import email_client
 from ..lib.shims import APIRouter
 from ..models import Invitation, InvitationNew, InvitationRead
+from ..game import perform_ai_turn
 
 router = APIRouter()
 
@@ -80,6 +81,7 @@ def respond_to_invitation(
     invitation_id: int,
     session: Session = Depends(get_session),
     user=Depends(get_user_from_request),
+    background_tasks: BackgroundTasks,
 ):
     invitation = session.get(Invitation, invitation_id)
     if invitation is None:
@@ -94,4 +96,9 @@ def respond_to_invitation(
     if invitation.responded:
         raise HTTPException(409, "invitation has already been redeemed")
 
-    return crud.respond_to_invitation(invitation, user, session)
+    invitation = crud.respond_to_invitation(invitation, user, session)
+
+    if invitation.story.whose_turn_is_it.ai_player:
+        background_tasks.add_task(perform_ai_turn, invitation.story.story_uuid)
+
+    return invitation

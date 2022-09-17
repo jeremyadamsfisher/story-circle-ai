@@ -1,6 +1,5 @@
 from typing import Optional
 
-from loguru import logger
 from sqlmodel import Session, select
 
 from .models import Invitation, InvitationNew, PlayerOrder, Story, User, UserStoriesRead
@@ -115,7 +114,11 @@ def add_invitation(invitation: InvitationNew, session: Session) -> Invitation:
     return i
 
 
-def respond_to_invitation(invitation: Invitation, user: User, session: Session):
+def respond_to_invitation(
+    invitation: Invitation,
+    user: User,
+    session: Session,
+):
     """redeem the invitation so that the logged in user will be allowed
     to add to the story"""
     invitation.responded = True
